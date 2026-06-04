@@ -154,6 +154,32 @@
   .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%) translateY(100px);
     background:#3b2660; color:#fff; padding:12px 22px; border-radius:14px; font-weight:bold; transition:transform .3s; z-index:50; }
   .toast.show { transform:translateX(-50%) translateY(0); }
+
+  /* v4: rehber + gramer + okuma */
+  .letter-card .mn { font-size:.7rem; margin-top:4px; background:#fff3cd; color:#7a5b00; border-radius:8px; padding:3px 5px; }
+  .guide-box { background:rgba(255,255,255,.96); color:#3b2660; border-radius:20px; padding:18px; width:100%;
+    margin-top:10px; box-shadow:0 10px 26px rgba(0,0,0,.3); font-size:.95rem; line-height:1.6; }
+  .guide-box h3 { color:#a14ec9; margin-bottom:8px; font-size:1.15rem; }
+  .guide-box .ex-big { font-size:2rem; font-weight:bold; text-align:center; margin:8px 0; cursor:pointer; }
+  .guide-box .demo { display:flex; gap:14px; justify-content:center; align-items:center; flex-wrap:wrap; margin:10px 0;
+    background:#f3ecfb; border-radius:14px; padding:10px; }
+  .guide-box .demo b { font-size:1.6rem; cursor:pointer; }
+  .guide-nav { display:flex; gap:10px; margin-top:14px; align-items:center; }
+  .guide-nav button { border:none; border-radius:13px; padding:12px 20px; font-weight:bold; font-size:.95rem;
+    cursor:pointer; background:rgba(255,255,255,.22); color:#fff; }
+  .guide-nav .pgno { font-weight:bold; font-size:.9rem; opacity:.85; }
+  #nextStep { width:100%; background:linear-gradient(135deg,rgba(255,217,61,.25),rgba(255,154,61,.25));
+    border:2px solid rgba(255,217,61,.5); border-radius:16px; padding:11px 14px; margin:6px 0 2px;
+    font-weight:bold; font-size:.92rem; cursor:pointer; text-align:center; }
+  .gram-ex { background:#f3ecfb; border-radius:12px; padding:9px 12px; margin:6px 0; cursor:pointer; }
+  .gram-ex .kr { font-weight:bold; font-size:1.1rem; }
+  .gram-ex .tr { font-size:.82rem; opacity:.75; }
+  .gram-q { margin-top:12px; border-top:2px dashed #ddd; padding-top:10px; }
+  .gram-chips { display:flex; gap:8px; justify-content:center; margin-top:8px; }
+  .gram-chips button { border:none; border-radius:11px; padding:11px 18px; font-size:1.05rem; font-weight:bold;
+    cursor:pointer; background:#ece3f7; color:#3b2660; }
+  .gram-chips button.ok { background:#7ed957; color:#0b3d10; }
+  .gram-chips button.no { background:#ef9a9a; color:#5d1010; }
 </style>
 </head>
 <body>
@@ -187,7 +213,11 @@
     <div class="mod" data-go="numbers"><span class="ico">🔢</span><h3>Sayılar & Saat</h3><p>Korece sayı sistemi</p></div>
     <div class="mod" data-go="writing"><span class="ico">✏️</span><h3>Yazma Tahtası</h3><p>Parmakla hece çiz</p></div>
     <div class="mod" data-go="backupPage"><span class="ico">💾</span><h3>Kayıt & Yedek</h3><p>İlerlemeni yedekle/taşı</p></div>
+    <div class="mod" data-go="guide"><span class="ico">📚</span><h3>Başlangıç Rehberi</h3><p>Hangul nasıl çalışır? Önce oku!</p></div>
+    <div class="mod" data-go="okuma"><span class="ico">🔤</span><h3>Okuma Koşusu</h3><p>Heceleri okuma antrenmanı</p></div>
+    <div class="mod" data-go="gramer"><span class="ico">🧩</span><h3>Cümle Sırları</h3><p>Mini dilbilgisi dersleri</p></div>
   </div>
+  <div id="nextStep">🎓 ...</div>
   <div id="wotd" style="width:100%;background:rgba(255,255,255,.15);border-radius:16px;padding:12px 14px;margin-top:4px;text-align:center;cursor:pointer">
     <div style="font-size:.72rem;opacity:.75;font-weight:bold;letter-spacing:1px">🌟 GÜNÜN KELİMESİ</div>
     <div id="wotdKr" style="font-size:1.8rem;font-weight:bold;margin:2px 0">·</div>
@@ -338,6 +368,28 @@
   <button class="gold-btn" id="bkRestoreBtn">♻️ Geri Yükle</button>
   <div style="font-size:.75rem;opacity:.7;margin-top:10px;text-align:center">Not: Geri yükleme mevcut ilerlemenin üzerine yazar.</div>
 </div>
+
+<!-- REHBER -->
+<div class="page" id="guide">
+  <div class="guide-box" id="guideBox"></div>
+  <div class="guide-nav">
+    <button id="gPrev">⬅️ Önceki</button>
+    <span class="pgno" id="gPg"></span>
+    <button id="gNext">Sonraki ➡️</button>
+  </div>
+</div>
+
+<!-- OKUMA KOŞUSU -->
+<div class="page" id="okuma">
+  <div class="q-head"><span id="rdProgress">Hece 1/10</span><span>·</span><span>✅ <span id="rdScore">0</span></span></div>
+  <div class="syl-big" id="rdSyl" style="margin-top:10px">가</div>
+  <div style="font-size:.8rem;opacity:.85;margin:6px 0">Bu hece nasıl okunur? (dinlemek için heceye dokun)</div>
+  <div class="q-opts" id="rdOpts" style="max-width:420px"></div>
+</div>
+
+<!-- CÜMLE SIRLARI -->
+<div class="page" id="gramer"><div class="sent-list" id="gramList"></div></div>
+<div class="page" id="gramPlay"><div class="guide-box" id="gramBox"></div></div>
 
 <div class="screen" id="resultScreen">
   <h2 id="resTitle"></h2>
@@ -668,7 +720,7 @@ function openLesson(i) {
     const d = document.createElement("div");
     d.className = "letter-card";
     d.innerHTML = `<div class="glyph">${L.ch}</div><div class="nm">${L.nm} · ${L.rom}</div>
-      <div class="hint">${L.hint}</div><div class="ex">🔊 ${L.ex[0]} (${L.ex[1]}) = ${L.ex[2]}</div>`;
+      <div class="hint">${L.hint}</div><div class="mn">💡 ${MN[L.ch]||""}</div><div class="ex">🔊 ${L.ex[0]} (${L.ex[1]}) = ${L.ex[2]}</div>`;
     d.onclick = () => speak(L.ex[0]);
     grid.appendChild(d);
   });
@@ -1096,7 +1148,7 @@ const DIALOGS = [
   { t:"İlk Tanışma", lines:[
     ["A","안녕하세요!","annyeonghaseyo!","Merhaba!"],
     ["B","안녕하세요. 이름이 뭐예요?","annyeonghaseyo. ireumi mwoyeyo?","Merhaba. Adın ne?"],
-    ["A","제 이름은 에이쥬예요.","je ireumeun eijyu-yeyo.","Benim adım Eylül."],
+    ["A","제 이름은 에이륄이에요.","je ireumeun eijyu-yeyo.","Benim adım Eylül."],
     ["B","만나서 반가워요!","mannaseo bangawoyo!","Tanıştığımıza memnun oldum!"] ] },
   { t:"Nasılsın?", lines:[
     ["A","잘 지냈어요?","jal jinaesseoyo?","Nasılsın? (İyi miydin?)"],
@@ -1314,12 +1366,240 @@ document.getElementById("numQuizBtn").onclick = startNumQuiz;
 document.querySelectorAll(".mod[data-go]").forEach(m => { m.onclick = () => go(m.dataset.go); });
 
 
+
+/* ================= v4: REHBER + OKUMA + GRAMER + AKILLI ONERI ================= */
+const MN = {
+  "ㄱ":"köşeli kuş gagası 🐦 → g","ㄴ":"kızak gibi ⛷️ → n","ㄷ":"yan yatmış dolap 🚪 → d",
+  "ㄹ":"kıvrılan yılan 🐍 → r/l","ㅁ":"kare pencere 🪟 → m","ㅂ":"kulplu kova 🪣 → b",
+  "ㅅ":"sivri çadır ⛺ → s","ㅇ":"yuvarlak yüzük 💍","ㅈ":"şapkalı ㅅ 🎩 → c","ㅎ":"şapkalı gülen yüz 😊 → h",
+  "ㅊ":"ㅈ + bir çizgi = ç ✨","ㅋ":"ㄱ + çizgi = güçlü K 💪","ㅌ":"ㄷ + çizgi = güçlü T 💪","ㅍ":"iki ayaklı köprü 🌉 → p",
+  "ㅏ":"ağaç, dalı SAĞA → a 🌳","ㅑ":"sağa İKİ dal → ya","ㅓ":"dalı SOLA → eo 🌲","ㅕ":"sola iki dal → yeo",
+  "ㅣ":"dimdik çubuk → i","ㅗ":"filiz YUKARI → o 🌱","ㅛ":"iki filiz → yo","ㅜ":"kök AŞAĞI → u 🥕",
+  "ㅠ":"iki kök → yu","ㅡ":"dümdüz yer çizgisi → ı",
+  "ㄲ":"çift ㄱ — sımsıkı söyle!","ㄸ":"çift ㄷ — sımsıkı!","ㅃ":"çift ㅂ — sımsıkı!","ㅆ":"çift ㅅ — tıslayarak!","ㅉ":"çift ㅈ — sımsıkı!",
+  "ㅐ":"ㅏ+ㅣ birleşti → e","ㅔ":"ㅓ+ㅣ birleşti → e","ㅒ":"ㅑ+ㅣ → ye","ㅖ":"ㅕ+ㅣ → ye",
+  "ㅘ":"ㅗ+ㅏ → va","ㅝ":"ㅜ+ㅓ → vo","ㅚ":"ㅗ+ㅣ → ve","ㅟ":"ㅜ+ㅣ → vi","ㅢ":"ㅡ+ㅣ → ıy"
+};
+
+/* ---------- REHBER ---------- */
+const GUIDE = [
+ { t:"📜 Hangul'un Hikâyesi", h:`<p>Kore alfabesi <b>Hangul</b>, 1443 yılında Kral <b>Sejong</b> tarafından icat edildi. Amacı: herkesin kolayca okuma yazma öğrenebilmesi! 👑</p>
+   <p style="margin-top:8px">O kadar akıllıca tasarlandı ki Korelilerin bir sözü var: <i>"Akıllı biri bir sabahta, herkes bir haftada öğrenir."</i> 😊</p>
+   <p style="margin-top:8px">Toplam <b>14 temel ünsüz</b> + <b>10 temel ünlü</b> var. Sen de derslerde hepsini öğreneceksin!</p>` },
+ { t:"🧱 Sihirli Bloklar", h:`<p>Korece harfler yan yana dizilmez — <b>hece blokları</b> halinde paketlenir! Her blok = 1 hece.</p>
+   <div class="demo"><span>ㅎ + ㅏ + ㄴ =</span><b onclick="speak('한')">한 🔊</b></div>
+   <p>Türkçede "han" yazarken 3 harfi yan yana koyarız. Korecede 3 harf <b>tek bir kare</b> içine yerleşir. "Hangul" iki bloktur:</p>
+   <div class="demo"><b onclick="speak('한')">한</b><span>+</span><b onclick="speak('글')">글</b><span>=</span><b onclick="speak('한글')">한글 🔊</b></div>` },
+ { t:"🧭 Ünlünün Yönü Kuralı", h:`<p>Çok önemli kural! Ünlünün şekline göre yeri değişir:</p>
+   <p style="margin-top:6px">📏 <b>Dik ünlüler</b> (ㅏ ㅑ ㅓ ㅕ ㅣ) ünsüzün <b>SAĞINA</b> yazılır:</p>
+   <div class="demo"><span>ㄱ+ㅏ =</span><b onclick="speak('가')">가 🔊</b><span>ㄴ+ㅓ =</span><b onclick="speak('너')">너 🔊</b></div>
+   <p>📐 <b>Yatık ünlüler</b> (ㅗ ㅛ ㅜ ㅠ ㅡ) ünsüzün <b>ALTINA</b> yazılır:</p>
+   <div class="demo"><span>ㄱ+ㅗ =</span><b onclick="speak('고')">고 🔊</b><span>ㄴ+ㅜ =</span><b onclick="speak('누')">누 🔊</b></div>
+   <p>Hece Fabrikası'nda dene — fark hemen görünür! 🏭</p>` },
+ { t:"⬇️ Batchim: Son Ünsüz", h:`<p>Hece sonuna gelen ünsüz, bloğun <b>altına</b> yazılır. Buna <b>batchim</b> denir:</p>
+   <div class="demo"><span>ㅂ+ㅏ+ㅂ =</span><b onclick="speak('밥')">밥 🔊</b><span>(pilav)</span></div>
+   <div class="demo"><span>ㄱ+ㅗ+ㅁ =</span><b onclick="speak('곰')">곰 🔊</b><span>(ayı)</span></div>
+   <p>Süper ipucu: ㅇ harfi hece <b>başında sessizdir</b>, ama <b>batchim olunca "ng"</b> okunur:</p>
+   <div class="demo"><b onclick="speak('강')">강 🔊</b><span>= "kang" (nehir)</span></div>` },
+ { t:"🙏 Kibarlık Sırrı: 요", h:`<p>Korecede kibarlık çok önemli! Cümle sonuna <b>요 (yo)</b> eklersen kibar olur:</p>
+   <div class="gram-ex" onclick="speak('고마워')"><div class="kr">고마워 🔊</div><div class="tr">Sağ ol (arkadaşa)</div></div>
+   <div class="gram-ex" onclick="speak('고마워요')"><div class="kr">고마워요 🔊</div><div class="tr">Teşekkür ederim (kibar)</div></div>
+   <p>Büyüklerle ve tanımadıklarınla konuşurken <b>요</b>'yu unutma! 😊</p>` },
+ { t:"🗺️ Nasıl Çalışmalı?", h:`<p>İşte sana özel çalışma planı:</p>
+   <p>1️⃣ Önce <b>📖 Hangul Dersleri</b> — günde 1 ders yeter!<br>
+      2️⃣ <b>🏭 Hece Fabrikası</b>'nda öğrendiğin harflerle oyna<br>
+      3️⃣ <b>🗂️ Kelime Kartları</b> — 🔔 işaretli desteler tekrar bekliyor demektir<br>
+      4️⃣ <b>🔤 Okuma Koşusu</b> ve <b>✍️ Dikte</b> ile pekiştir<br>
+      5️⃣ <b>🧩 Cümle Sırları</b> ve <b>🧱 Cümle Kurucu</b> ile cümleye geç!</p>
+   <p style="margin-top:8px">🔥 Her gün 10-15 dakika = serini koru. Ana sayfadaki <b>"Sıradaki adımın"</b> kutusu sana hep yol gösterir! 🎯</p>` }
+];
+let gPage = 0;
+function renderGuide() {
+  const g = GUIDE[gPage];
+  document.getElementById("guideBox").innerHTML = `<h3>${g.t}</h3>` + g.h;
+  document.getElementById("gPg").textContent = (gPage+1) + "/" + GUIDE.length;
+  document.getElementById("gPrev").style.visibility = gPage === 0 ? "hidden" : "visible";
+  document.getElementById("gNext").textContent = gPage === GUIDE.length-1 ? "Bitti ✅" : "Sonraki ➡️";
+}
+document.getElementById("gPrev").onclick = () => { if (gPage > 0) { gPage--; renderGuide(); } };
+document.getElementById("gNext").onclick = () => {
+  if (gPage < GUIDE.length-1) { gPage++; renderGuide(); }
+  else { if (!S.guideRead) { S.guideRead = true; save(); addXp(20); } go("home", false); }
+};
+
+/* ---------- OKUMA KOŞUSU ---------- */
+const RD_JONG = ["","","","ㄱ","ㄴ","ㄹ","ㅁ","ㅂ","ㅇ"]; // boş ağırlıklı
+let RD = null;
+function startOkuma() {
+  RD = { i:0, score:0 };
+  nextOkuma();
+}
+function romOf(c, v, j) { return (CHO_R[c] + JUNG_R[v] + (JONG_R[j]||"")) || "-"; }
+function nextOkuma() {
+  const c = Math.floor(Math.random()*19), v = Math.floor(Math.random()*21);
+  const j = RD_JONG[Math.floor(Math.random()*RD_JONG.length)];
+  const syl = compose(c, v, j);
+  const correct = romOf(c, v, j);
+  // yanlış şıklar: cho/jung değiştir
+  const wrongs = new Set();
+  let guard = 0;
+  while (wrongs.size < 3 && guard++ < 60) {
+    let wc = c, wv = v, wj = j;
+    const m = Math.random();
+    if (m < 0.45) wc = Math.floor(Math.random()*19);
+    else if (m < 0.9) wv = Math.floor(Math.random()*21);
+    else wj = RD_JONG[Math.floor(Math.random()*RD_JONG.length)];
+    const r = romOf(wc, wv, wj);
+    if (r !== correct) wrongs.add(r);
+  }
+  RD.cur = { syl, correct };
+  document.getElementById("rdProgress").textContent = `Hece ${RD.i+1}/10`;
+  document.getElementById("rdScore").textContent = RD.score;
+  const sylEl = document.getElementById("rdSyl");
+  sylEl.textContent = syl;
+  sylEl.onclick = () => speak(syl, 0.7);
+  const opts = [...wrongs, correct].sort(() => Math.random()-.5);
+  const box = document.getElementById("rdOpts"); box.innerHTML = "";
+  opts.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "q-opt";
+    b.textContent = o;
+    b.onclick = () => {
+      const ok = o === correct;
+      b.classList.add(ok ? "ok" : "no");
+      if (ok) { RD.score++; speak(syl, 0.75); }
+      else [...box.children].forEach(x => { if (x.textContent === correct) x.classList.add("ok"); });
+      [...box.children].forEach(x => x.style.pointerEvents = "none");
+      setTimeout(() => {
+        RD.i++;
+        if (RD.i < 10) nextOkuma();
+        else {
+          if (!S.okumaCount) S.okumaCount = 0;
+          S.okumaCount++; save();
+          addXp(RD.score * 5);
+          showResult(RD.score >= 8 ? "🔤 Okuma Yıldızı!" : "💪 İyi Gidiyor!",
+            `${RD.score}/10 doğru okudun — +${RD.score*5} XP`, () => go("home", false));
+        }
+      }, 950);
+    };
+    box.appendChild(b);
+  });
+}
+
+/* ---------- CÜMLE SIRLARI (dilbilgisi) ---------- */
+const GRAM = [
+ { t:"...'dir demek: 예요 / 이에요", e:"İsmin sonuna gelir. Ünlüyle bitiyorsa <b>예요</b>, ünsüzle bitiyorsa <b>이에요</b>.",
+   ex:[["사과예요","(Bu) bir elma"],["책이에요","(Bu) bir kitap"]],
+   q:{ s:"이거 가방___", opts:["이에요","예요","은"], a:"이에요", full:"이거 가방이에요", tr:"Bu bir çanta" } },
+ { t:"Konu eki: 은 / 는", e:"'...'e gelince, ... ise' anlamı katar. Ünlüden sonra <b>는</b>, ünsüzden sonra <b>은</b>.",
+   ex:[["저는 학생이에요","Ben öğrenciyim"],["오늘은 토요일이에요","Bugün cumartesi"]],
+   q:{ s:"저___ 에이륄이에요", opts:["는","은","를"], a:"는", full:"저는 에이륄이에요", tr:"Ben Eylül'üm" } },
+ { t:"Özne eki: 이 / 가", e:"Cümlenin öznesini işaretler. Ünlüden sonra <b>가</b>, ünsüzden sonra <b>이</b>.",
+   ex:[["고양이가 자요","Kedi uyuyor"],["눈이 와요","Kar yağıyor"]],
+   q:{ s:"강아지___ 놀아요", opts:["가","이","을"], a:"가", full:"강아지가 놀아요", tr:"Köpek oynuyor" } },
+ { t:"Nesne eki: 을 / 를", e:"Neyi? sorusunun cevabını işaretler. Ünlüden sonra <b>를</b>, ünsüzden sonra <b>을</b>.",
+   ex:[["빵을 먹어요","Ekmek yiyorum"],["우유를 마셔요","Süt içiyorum"]],
+   q:{ s:"책___ 읽어요", opts:["을","를","는"], a:"을", full:"책을 읽어요", tr:"Kitap okuyorum" } },
+ { t:"Yön eki: 에", e:"'-e / -de' demek. Gidilen yeri veya zamanı gösterir.",
+   ex:[["학교에 가요","Okula gidiyorum"],["집에 있어요","Evdeyim"]],
+   q:{ s:"공원___ 가요", opts:["에","을","는"], a:"에", full:"공원에 가요", tr:"Parka gidiyorum" } },
+ { t:"Eylem yeri: 에서", e:"Bir eylemin YAPILDIĞI yeri gösterir: '...-de (bir şey yapmak)'.",
+   ex:[["공원에서 놀아요","Parkta oynuyorum"],["학교에서 공부해요","Okulda ders çalışıyorum"]],
+   q:{ s:"집___ 자요", opts:["에서","를","가"], a:"에서", full:"집에서 자요", tr:"Evde uyuyorum" } },
+ { t:"Olumsuzluk: 안", e:"Fiilin önüne <b>안</b> koy = '-me / -ma' (yapmıyorum).",
+   ex:[["안 먹어요","Yemiyorum"],["안 가요","Gitmiyorum"]],
+   q:{ s:"우유를 ___ 마셔요", opts:["안","는","에"], a:"안", full:"우유를 안 마셔요", tr:"Süt içmiyorum" } },
+ { t:"Ve / ile: 하고", e:"İki şeyi bağlar: 've' ya da 'ile' demek.",
+   ex:[["엄마하고 아빠","Annem ve babam"],["빵하고 우유 주세요","Ekmek ve süt lütfen"]],
+   q:{ s:"고양이___ 강아지", opts:["하고","에서","가"], a:"하고", full:"고양이하고 강아지", tr:"Kedi ve köpek" } }
+];
+function renderGramList() {
+  if (!S.gramDone) S.gramDone = {};
+  const list = document.getElementById("gramList"); list.innerHTML = "";
+  GRAM.forEach((g, i) => {
+    const d = document.createElement("div");
+    d.className = "sent-item";
+    d.innerHTML = `<span class="st">${S.gramDone[i] ? "✅" : "🧩"}</span><span class="info"><b>${g.t}</b></span>`;
+    d.onclick = () => openGram(i);
+    list.appendChild(d);
+  });
+}
+function openGram(i) {
+  const g = GRAM[i];
+  TITLES.gramPlay = "🧩 Sır " + (i+1);
+  const box = document.getElementById("gramBox");
+  let exHtml = g.ex.map(e => `<div class="gram-ex" onclick="speak('${e[0].replace(/'/g,"\\'")}')"><div class="kr">${e[0]} 🔊</div><div class="tr">${e[1]}</div></div>`).join("");
+  box.innerHTML = `<h3>${g.t}</h3><p>${g.e}</p>${exHtml}
+    <div class="gram-q"><b>✏️ Sıra sende:</b> Boşluğa hangisi gelir?<div style="font-size:1.25rem;font-weight:bold;text-align:center;margin:8px 0">${g.q.s}</div>
+    <div style="font-size:.85rem;text-align:center;opacity:.75">${g.q.tr}</div>
+    <div class="gram-chips" id="gramChips"></div></div>`;
+  const chips = document.getElementById("gramChips");
+  g.q.opts.forEach(o => {
+    const b = document.createElement("button");
+    b.textContent = o;
+    b.onclick = () => {
+      const ok = o === g.q.a;
+      b.classList.add(ok ? "ok" : "no");
+      if (ok) {
+        speak(g.q.full, 0.78);
+        [...chips.children].forEach(x => x.style.pointerEvents = "none");
+        const first = !S.gramDone[i];
+        if (first) { S.gramDone[i] = true; save(); }
+        setTimeout(() => showResult("🎉 Doğru!", `${g.q.full} = ${g.q.tr}` + (first ? " (+12 XP)" : ""), () => {
+          if (first) addXp(12);
+          go("gramer", false);
+        }), 600);
+      }
+    };
+    chips.appendChild(b);
+  });
+  go("gramPlay");
+}
+
+/* ---------- AKILLI ÖNERİ ---------- */
+function nextStepInfo() {
+  if (!S.guideRead) return { txt:"🎓 Sıradaki adımın: 📚 Başlangıç Rehberi'ni oku!", go:"guide" };
+  const doneLessons = Object.keys(S.lessonsDone).filter(k => S.lessonsDone[k]).length;
+  if (doneLessons < LESSONS.length) {
+    const next = LESSONS.findIndex((_, i) => !S.lessonsDone[i]);
+    return { txt:`🎓 Sıradaki adımın: 📖 ${LESSONS[next].name}`, go:"hangul" };
+  }
+  const due = DECKS.reduce((a, d) => a + d.words.filter(w => { const x = getSrs(wordKey(d.id, w[0])); return x.box > 0 && x.due <= Date.now(); }).length, 0);
+  if (due > 0) return { txt:`🎓 Sıradaki adımın: 🔔 ${due} kelime tekrar bekliyor!`, go:"decks" };
+  if (!S.gramDone || Object.keys(S.gramDone).filter(k => S.gramDone[k]).length < GRAM.length)
+    return { txt:"🎓 Sıradaki adımın: 🧩 Cümle Sırları'ndan bir ders!", go:"gramer" };
+  const sentLeft = SENTENCES.length - Object.keys(S.sentDone||{}).filter(k => S.sentDone[k]).length;
+  if (sentLeft > 0) return { txt:`🎓 Sıradaki adımın: 🧱 ${sentLeft} cümle seni bekliyor!`, go:"sentences" };
+  return { txt:"🎓 Harikasın! Bugün: 🔤 Okuma Koşusu veya 🎯 Quiz?", go:"okuma" };
+}
+function renderNextStep() {
+  const n = nextStepInfo();
+  const el = document.getElementById("nextStep");
+  el.textContent = n.txt;
+  el.onclick = () => go(n.go);
+}
+
+/* go kancaları (v4) */
+const _origGo4 = go;
+go = function(p, push) {
+  _origGo4(p, push);
+  if (p === "guide") { gPage = 0; renderGuide(); }
+  if (p === "okuma") startOkuma();
+  if (p === "gramer") renderGramList();
+  if (p === "home") renderNextStep();
+};
+Object.assign(TITLES, { guide:"📚 Başlangıç Rehberi", okuma:"🔤 Okuma Koşusu",
+  gramer:"🧩 Cümle Sırları", gramPlay:"🧩 Cümle Sırrı" });
+document.querySelectorAll(".mod[data-go]").forEach(m => { m.onclick = () => go(m.dataset.go); });
+
+
 load();
 renderStats();
 pickVoice();
 checkBadges();
 wordOfDay();
 initBackup();
+renderNextStep();
 
 if (typeof module !== 'undefined') module.exports = { compose, JONG_IDX, LESSONS, DECKS, SENTENCES, DICT_EASY, DICT_HARD, CHO, JUNG };
 </script>
