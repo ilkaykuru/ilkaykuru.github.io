@@ -86,10 +86,10 @@
   const wp = PATH.map(([c,r]) => ({ x: c*GS + GS/2, y: r*GS + GS/2 }));
 
   const TOWERS = {
-    ok:    { name:"Okçu",  ic:"🏹", cost:40,  range:110, dmg:8,  rate:45,  color:"#8d6e63", bullet:"#fff" },
-    buz:   { name:"Buz",   ic:"❄️", cost:60,  range:95,  dmg:4,  rate:55,  slow:0.5, color:"#4fc3f7", bullet:"#b3e5fc" },
-    ates:  { name:"Ateş",  ic:"🔥", cost:90,  range:85,  dmg:22, rate:75,  splash:55, color:"#ef5350", bullet:"#ff9800" },
-    sihir: { name:"Sihir", ic:"✨", cost:130, range:140, dmg:30, rate:60,  color:"#ab47bc", bullet:"#e1bee7" }
+    ok:    { name:"Okçu",  ic:"🏹", cost:40,  range:110, dmg:12, rate:700,  color:"#8d6e63", bullet:"#fff" },
+    buz:   { name:"Buz",   ic:"❄️", cost:60,  range:95,  dmg:8,  rate:900,  slow:0.5, color:"#4fc3f7", bullet:"#b3e5fc" },
+    ates:  { name:"Ateş",  ic:"🔥", cost:90,  range:85,  dmg:30, rate:1400, splash:55, color:"#ef5350", bullet:"#ff9800" },
+    sihir: { name:"Sihir", ic:"✨", cost:130, range:140, dmg:45, rate:1100, color:"#ab47bc", bullet:"#e1bee7" }
   };
 
   const WAVES = 15;
@@ -168,7 +168,7 @@
     enemies.forEach(e => {
       let spd = e.sp * (e.slowT > 0 ? e.slow : 1);
       e.slowT = Math.max(0, e.slowT - dt);
-      e.t += spd * dt * 0.06;
+      e.t += spd * dt * 0.003;
       const seg = Math.floor(e.t);
       if (seg >= wp.length - 1) { e.dead = true; e.reached = true; }
     });
@@ -196,7 +196,7 @@
       enemies.forEach(e => { if (e.dead) return; const p = enemyPos(e); const d = Math.hypot(p.x-t.x,p.y-t.y);
         if (d <= range && e.t > far) { far = e.t; chosen = e; } });
       if (chosen) {
-        t.cool = def.rate * (1 - (t.lvl-1)*0.04);
+        t.cool = def.rate * (1 - (t.lvl-1)*0.1);
         const dmg = def.dmg * (1 + (t.lvl-1)*0.35);
         bullets.push({ x: t.x, y: t.y, target: chosen, dmg, def, color: def.bullet });
         t.flash = 6;
