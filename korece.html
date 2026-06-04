@@ -183,6 +183,16 @@
     <div class="mod" data-go="sentences"><span class="ico">🧱</span><h3>Cümle Kurucu</h3><p>Kelimeleri sıraya diz</p></div>
     <div class="mod" data-go="dictation"><span class="ico">✍️</span><h3>Yazı Atölyesi</h3><p>Duy ve heceyi yaz (dikte)</p></div>
     <div class="mod" data-go="badgesPage"><span class="ico">🏅</span><h3>Rozetlerim</h3><p>Koleksiyonunu büyüt</p></div>
+    <div class="mod" data-go="dialogs"><span class="ico">💬</span><h3>Diyaloglar</h3><p>Mini konuşmalar · sesli</p></div>
+    <div class="mod" data-go="numbers"><span class="ico">🔢</span><h3>Sayılar & Saat</h3><p>Korece sayı sistemi</p></div>
+    <div class="mod" data-go="writing"><span class="ico">✏️</span><h3>Yazma Tahtası</h3><p>Parmakla hece çiz</p></div>
+    <div class="mod" data-go="backupPage"><span class="ico">💾</span><h3>Kayıt & Yedek</h3><p>İlerlemeni yedekle/taşı</p></div>
+  </div>
+  <div id="wotd" style="width:100%;background:rgba(255,255,255,.15);border-radius:16px;padding:12px 14px;margin-top:4px;text-align:center;cursor:pointer">
+    <div style="font-size:.72rem;opacity:.75;font-weight:bold;letter-spacing:1px">🌟 GÜNÜN KELİMESİ</div>
+    <div id="wotdKr" style="font-size:1.8rem;font-weight:bold;margin:2px 0">·</div>
+    <div id="wotdTr" style="font-size:.9rem;opacity:.9"></div>
+    <div style="font-size:.7rem;opacity:.6;margin-top:2px">dinlemek için dokun 🔊</div>
   </div>
   <div id="ttsNote"></div>
 </div>
@@ -282,6 +292,52 @@
 
 <!-- ROZETLER -->
 <div class="page" id="badgesPage"><div class="badges" id="badgeGrid"></div></div>
+
+<!-- DİYALOGLAR -->
+<div class="page" id="dialogs"><div class="sent-list" id="dialogList"></div></div>
+<div class="page" id="dialogPlay">
+  <div class="q-head"><span id="dlgTitle"></span></div>
+  <div id="dlgLines" style="width:100%;display:flex;flex-direction:column;gap:10px;margin-top:10px"></div>
+  <button class="gold-btn" id="dlgPlayAll">▶️ Tümünü Dinle</button>
+</div>
+
+<!-- SAYILAR & SAAT -->
+<div class="page" id="numbers">
+  <div style="width:100%;background:rgba(255,255,255,.13);border-radius:16px;padding:12px;margin-top:8px;font-size:.85rem;line-height:1.5">
+    Korecede iki sayı sistemi var. Burada <b>Çin kökenli</b> sistemi öğreniyoruz (tarih, para, telefon, dakika için kullanılır).
+  </div>
+  <div id="numGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:8px;width:100%;margin-top:10px"></div>
+  <button class="gold-btn" id="numQuizBtn">🎯 Sayı Testi</button>
+</div>
+
+<!-- YAZMA TAHTASI -->
+<div class="page" id="writing">
+  <div style="font-size:.85rem;opacity:.85;margin-top:6px;text-align:center">Soluk harfin üzerinden parmağınla geç ✏️</div>
+  <div id="wTarget" style="font-size:1rem;font-weight:bold;margin:6px 0">·</div>
+  <canvas id="wCanvas" style="background:#fff;border-radius:18px;box-shadow:0 8px 22px rgba(0,0,0,.35);touch-action:none"></canvas>
+  <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;justify-content:center">
+    <button class="sb-btns" style="border:none;border-radius:12px;padding:11px 16px;font-weight:bold;background:rgba(255,255,255,.22);color:#fff" id="wClear">🧹 Temizle</button>
+    <button class="sb-btns" style="border:none;border-radius:12px;padding:11px 16px;font-weight:bold;background:rgba(255,255,255,.22);color:#fff" id="wHear">🔊 Dinle</button>
+    <button class="gold-btn" style="margin-top:0" id="wNext">➡️ Sonraki</button>
+  </div>
+</div>
+
+<!-- KAYIT & YEDEK -->
+<div class="page" id="backupPage">
+  <div style="width:100%;background:rgba(255,255,255,.13);border-radius:16px;padding:14px;margin-top:8px;font-size:.86rem;line-height:1.55">
+    İlerlemen bu cihazda otomatik kaydediliyor 💾. Başka cihaza taşımak veya kaybetmemek için aşağıdaki <b>yedek kodunu</b> kopyala ve güvenli bir yere kaydet (örn. kendine mesaj at).
+  </div>
+  <textarea id="bkCode" readonly style="width:100%;height:90px;margin-top:10px;border-radius:12px;border:none;padding:10px;font-size:.7rem;font-family:monospace;resize:none"></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center">
+    <button class="gold-btn" style="margin-top:0" id="bkCopy">📋 Kodu Kopyala</button>
+    <button class="sb-btns" style="border:none;border-radius:12px;padding:13px 18px;font-weight:bold;background:rgba(255,255,255,.22);color:#fff" id="bkDownload">⬇️ Dosya İndir</button>
+  </div>
+  <div style="width:100%;border-top:1px solid rgba(255,255,255,.2);margin:18px 0 8px"></div>
+  <div style="font-size:.86rem;margin-bottom:6px"><b>Geri Yükle:</b> Yedek kodunu buraya yapıştır:</div>
+  <textarea id="bkRestore" placeholder="yedek kodunu buraya yapıştır..." style="width:100%;height:70px;border-radius:12px;border:none;padding:10px;font-size:.7rem;font-family:monospace;resize:none"></textarea>
+  <button class="gold-btn" id="bkRestoreBtn">♻️ Geri Yükle</button>
+  <div style="font-size:.75rem;opacity:.7;margin-top:10px;text-align:center">Not: Geri yükleme mevcut ilerlemenin üzerine yazar.</div>
+</div>
 
 <div class="screen" id="resultScreen">
   <h2 id="resTitle"></h2>
@@ -1024,10 +1080,246 @@ function toast(msg) {
   t._tm = setTimeout(() => t.classList.remove("show"), 1700);
 }
 
+
+/* ================= GÜNÜN KELİMESİ ================= */
+function wordOfDay() {
+  const all = DECKS.flatMap(d => d.words);
+  const day = Math.floor(Date.now() / 86400000);
+  const w = all[day % all.length];
+  document.getElementById("wotdKr").textContent = w[0];
+  document.getElementById("wotdTr").textContent = w[1] + " · " + w[2];
+  document.getElementById("wotd").onclick = () => speak(w[0]);
+}
+
+/* ================= DİYALOGLAR ================= */
+const DIALOGS = [
+  { t:"İlk Tanışma", lines:[
+    ["A","안녕하세요!","annyeonghaseyo!","Merhaba!"],
+    ["B","안녕하세요. 이름이 뭐예요?","annyeonghaseyo. ireumi mwoyeyo?","Merhaba. Adın ne?"],
+    ["A","제 이름은 에이쥬예요.","je ireumeun eijyu-yeyo.","Benim adım Eylül."],
+    ["B","만나서 반가워요!","mannaseo bangawoyo!","Tanıştığımıza memnun oldum!"] ] },
+  { t:"Nasılsın?", lines:[
+    ["A","잘 지냈어요?","jal jinaesseoyo?","Nasılsın? (İyi miydin?)"],
+    ["B","네, 잘 지냈어요. 당신은요?","ne, jal jinaesseoyo. dangsineunyo?","Evet, iyiyim. Ya sen?"],
+    ["A","저도 좋아요. 감사합니다.","jeodo joayo. gamsahamnida.","Ben de iyiyim. Teşekkürler."] ] },
+  { t:"Markette", lines:[
+    ["A","이거 얼마예요?","igeo eolmayeyo?","Bu kaç para?"],
+    ["B","삼천 원이에요.","samcheon wonieyo.","Üç bin won."],
+    ["A","이거 주세요.","igeo juseyo.","Bunu alayım lütfen."],
+    ["B","네, 여기 있어요.","ne, yeogi isseoyo.","Tabii, buyurun."] ] },
+  { t:"Okulda", lines:[
+    ["A","오늘 숙제 있어요?","oneul sukje isseoyo?","Bugün ödev var mı?"],
+    ["B","네, 수학 숙제예요.","ne, suhak sukjeyeyo.","Evet, matematik ödevi."],
+    ["A","어려워요?","eoryeowoyo?","Zor mu?"],
+    ["B","아니요, 쉬워요!","aniyo, swiwoyo!","Hayır, kolay!"] ] },
+  { t:"Yemekte", lines:[
+    ["A","맛있어요?","masisseoyo?","Lezzetli mi?"],
+    ["B","네, 정말 맛있어요!","ne, jeongmal masisseoyo!","Evet, gerçekten lezzetli!"],
+    ["A","더 먹을래요?","deo meogeullaeyo?","Biraz daha ister misin?"],
+    ["B","네, 좋아요!","ne, joayo!","Evet, olur!"] ] },
+  { t:"Vedalaşma", lines:[
+    ["A","이제 가야 해요.","ije gaya haeyo.","Artık gitmem lazım."],
+    ["B","알겠어요. 잘 가요!","algesseoyo. jal gayo!","Anladım. Güle güle!"],
+    ["A","또 만나요!","tto mannayo!","Tekrar görüşürüz!"],
+    ["B","안녕히 가세요!","annyeonghi gaseyo!","Hoşça kal!"] ] }
+];
+function renderDialogList() {
+  const list = document.getElementById("dialogList"); list.innerHTML = "";
+  DIALOGS.forEach((d, i) => {
+    const el = document.createElement("div");
+    el.className = "sent-item";
+    el.innerHTML = `<span class="st">💬</span><span class="info"><b>${d.t}</b>${d.lines.length} replik</span>`;
+    el.onclick = () => openDialog(i);
+    list.appendChild(el);
+  });
+}
+function openDialog(i) {
+  const d = DIALOGS[i];
+  TITLES.dialogPlay = "💬 " + d.t;
+  document.getElementById("dlgTitle").textContent = d.t;
+  const box = document.getElementById("dlgLines"); box.innerHTML = "";
+  d.lines.forEach(L => {
+    const [who, kr, rom, tr] = L;
+    const row = document.createElement("div");
+    const left = who === "A";
+    row.style.cssText = `align-self:${left?"flex-start":"flex-end"};max-width:85%;background:${left?"rgba(255,255,255,.95)":"linear-gradient(135deg,#7ed0ff,#5b9df9)"};color:${left?"#3b2660":"#0a2a55"};border-radius:16px;padding:10px 13px;cursor:pointer`;
+    row.innerHTML = `<div style="font-size:1.05rem;font-weight:bold">${kr}</div><div style="font-size:.72rem;opacity:.7">${rom}</div><div style="font-size:.82rem;margin-top:3px">${tr}</div>`;
+    row.onclick = () => speak(kr);
+    box.appendChild(row);
+  });
+  document.getElementById("dlgPlayAll").onclick = () => {
+    let k = 0;
+    const next = () => { if (k < d.lines.length) { speak(d.lines[k][1], 0.8); k++; setTimeout(next, 1900); } else { if(!S.dialogsDone) S.dialogsDone={}; if(!S.dialogsDone[i]){S.dialogsDone[i]=true; save(); addXp(10);} } };
+    next();
+  };
+  go("dialogPlay");
+}
+
+/* ================= SAYILAR & SAAT ================= */
+const SINO = [
+  ["1","일","il"],["2","이","i"],["3","삼","sam"],["4","사","sa"],["5","오","o"],
+  ["6","육","yuk"],["7","칠","chil"],["8","팔","pal"],["9","구","gu"],["10","십","sip"],
+  ["11","십일","sibil"],["12","십이","sibi"],["13","십삼","sipsam"],["20","이십","isip"],
+  ["30","삼십","samsip"],["50","오십","osip"],["100","백","baek"],["1000","천","cheon"]
+];
+function renderNumbers() {
+  const g = document.getElementById("numGrid"); g.innerHTML = "";
+  SINO.forEach(n => {
+    const d = document.createElement("div");
+    d.style.cssText = "background:rgba(255,255,255,.95);color:#3b2660;border-radius:14px;padding:10px 4px;text-align:center;cursor:pointer";
+    d.innerHTML = `<div style="font-size:1.2rem;font-weight:bold;color:#8a5cb8">${n[0]}</div><div style="font-size:1.35rem;font-weight:bold">${n[1]}</div><div style="font-size:.7rem;opacity:.7">${n[2]}</div>`;
+    d.onclick = () => speak(n[1]);
+    g.appendChild(d);
+  });
+}
+let NQ = null;
+function startNumQuiz() {
+  const pool = SINO.slice().sort(() => Math.random()-.5);
+  NQ = { qs: pool.slice(0, 10).map(n => {
+    const wrong = pool.filter(x => x[0] !== n[0]).sort(() => Math.random()-.5).slice(0,3);
+    return { n, opts: [...wrong, n].sort(() => Math.random()-.5) };
+  }), i:0, score:0 };
+  renderNQ(); go("quizPlay");
+}
+function renderNQ() {
+  const q = NQ.qs[NQ.i];
+  document.getElementById("qProgress").textContent = `Soru ${NQ.i+1}/10`;
+  document.getElementById("qScore").textContent = NQ.score;
+  document.getElementById("mGrid").style.display = "none";
+  document.getElementById("qOpts").style.display = "grid";
+  document.getElementById("qPrompt").innerHTML = `<div class="big">${q.n[0]}</div><div class="small">Bu sayının Korecesi?</div>`;
+  const opts = document.getElementById("qOpts"); opts.innerHTML = "";
+  q.opts.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "q-opt";
+    b.innerHTML = `${o[1]}<br><span style="font-size:.7rem;opacity:.65">${o[2]}</span>`;
+    b.onclick = () => {
+      const ok = o[0] === q.n[0];
+      b.classList.add(ok ? "ok" : "no");
+      if (ok) { NQ.score++; speak(q.n[1]); }
+      document.querySelectorAll(".q-opt").forEach(x => x.style.pointerEvents = "none");
+      setTimeout(() => { NQ.i++; if (NQ.i < 10) renderNQ();
+        else { addXp(NQ.score*4); showResult(NQ.score>=8?"🔢 Sayı Ustası!":"💪 Devam!", `${NQ.score}/10 doğru — +${NQ.score*4} XP`, () => go("numbers", false)); } }, 850);
+    };
+    opts.appendChild(b);
+  });
+}
+
+/* ================= YAZMA TAHTASI ================= */
+const WRITE_SET = ["가","나","다","마","바","사","아","자","하","고","노","무","부","수","어","오","우","이","한","글","사","랑","꽃","별","달"];
+let wIdx = 0, wCtx = null, wDrawing = false, wCanvas = null;
+function initWriting() {
+  wCanvas = document.getElementById("wCanvas");
+  const size = Math.min(window.innerWidth - 30, 320);
+  wCanvas.width = size; wCanvas.height = size;
+  wCtx = wCanvas.getContext("2d");
+  drawWGuide();
+  const pos = e => {
+    const r = wCanvas.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    return { x: (t.clientX - r.left) * (wCanvas.width / r.width), y: (t.clientY - r.top) * (wCanvas.height / r.height) };
+  };
+  const start = e => { e.preventDefault(); wDrawing = true; const p = pos(e); wCtx.beginPath(); wCtx.moveTo(p.x, p.y); };
+  const move = e => { if (!wDrawing) return; e.preventDefault(); const p = pos(e);
+    wCtx.lineWidth = 10; wCtx.lineCap = "round"; wCtx.lineJoin = "round"; wCtx.strokeStyle = "#5b3a8c";
+    wCtx.lineTo(p.x, p.y); wCtx.stroke(); };
+  const end = () => wDrawing = false;
+  wCanvas.addEventListener("touchstart", start, {passive:false});
+  wCanvas.addEventListener("touchmove", move, {passive:false});
+  wCanvas.addEventListener("touchend", end);
+  wCanvas.addEventListener("mousedown", start);
+  wCanvas.addEventListener("mousemove", move);
+  wCanvas.addEventListener("mouseup", end);
+  wCanvas.addEventListener("mouseleave", end);
+  document.getElementById("wClear").onclick = () => drawWGuide();
+  document.getElementById("wHear").onclick = () => speak(WRITE_SET[wIdx]);
+  document.getElementById("wNext").onclick = () => { wIdx = (wIdx + 1) % WRITE_SET.length; drawWGuide(); speak(WRITE_SET[wIdx]); };
+}
+function drawWGuide() {
+  if (!wCtx) return;
+  wCtx.clearRect(0, 0, wCanvas.width, wCanvas.height);
+  // ızgara
+  wCtx.strokeStyle = "#eee"; wCtx.lineWidth = 1;
+  wCtx.beginPath(); wCtx.moveTo(wCanvas.width/2,0); wCtx.lineTo(wCanvas.width/2,wCanvas.height);
+  wCtx.moveTo(0,wCanvas.height/2); wCtx.lineTo(wCanvas.width,wCanvas.height/2); wCtx.stroke();
+  // soluk hedef harf
+  wCtx.fillStyle = "rgba(180,150,210,.32)";
+  wCtx.font = (wCanvas.width*0.8) + "px serif";
+  wCtx.textAlign = "center"; wCtx.textBaseline = "middle";
+  wCtx.fillText(WRITE_SET[wIdx], wCanvas.width/2, wCanvas.height/2 + wCanvas.width*0.04);
+  document.getElementById("wTarget").textContent = "Hedef: " + WRITE_SET[wIdx];
+}
+
+/* ================= YEDEK / GERİ YÜKLE ================= */
+const SAVE_KEYS = ["koreceSave", "koreceBadgesShown"];
+function makeBackup() {
+  const data = {};
+  SAVE_KEYS.forEach(k => { try { const v = localStorage.getItem(k); if (v != null) data[k] = v; } catch(e) {} });
+  const json = JSON.stringify({ v:1, t:Date.now(), data });
+  try { return "EYLUL-KR1." + btoa(unescape(encodeURIComponent(json))); } catch(e) { return ""; }
+}
+function applyBackup(code) {
+  try {
+    code = (code || "").trim();
+    if (!code.startsWith("EYLUL-KR1.")) return false;
+    const json = decodeURIComponent(escape(atob(code.slice("EYLUL-KR1.".length))));
+    const obj = JSON.parse(json);
+    if (!obj.data) return false;
+    Object.keys(obj.data).forEach(k => { try { localStorage.setItem(k, obj.data[k]); } catch(e) {} });
+    return true;
+  } catch(e) { return false; }
+}
+function renderBackup() {
+  document.getElementById("bkCode").value = makeBackup();
+}
+function initBackup() {
+  document.getElementById("bkCopy").onclick = () => {
+    const ta = document.getElementById("bkCode");
+    ta.select();
+    try { navigator.clipboard.writeText(ta.value); } catch(e) {}
+    try { document.execCommand("copy"); } catch(e) {}
+    toast("📋 Kod kopyalandı!");
+  };
+  document.getElementById("bkDownload").onclick = () => {
+    const blob = new Blob([makeBackup()], { type:"text/plain" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "eylul-korece-yedek.txt";
+    a.click();
+    toast("⬇️ Yedek dosyası indirildi!");
+  };
+  document.getElementById("bkRestoreBtn").onclick = () => {
+    const code = document.getElementById("bkRestore").value;
+    if (applyBackup(code)) {
+      load(); renderStats(); renderBackup();
+      toast("♻️ İlerleme geri yüklendi!");
+      setTimeout(() => { try { shownBadges = JSON.parse(localStorage.getItem("koreceBadgesShown")) || {}; } catch(e){} }, 50);
+    } else toast("❌ Geçersiz yedek kodu!");
+  };
+}
+
+/* go() içine yeni sayfa render kancaları */
+const _origGo = go;
+go = function(p, push) {
+  _origGo(p, push);
+  if (p === "dialogs") renderDialogList();
+  if (p === "numbers") renderNumbers();
+  if (p === "backupPage") renderBackup();
+  if (p === "writing") { if (!wCtx) initWriting(); else drawWGuide(); }
+};
+Object.assign(TITLES, { dialogs:"💬 Diyaloglar", dialogPlay:"💬 Diyalog", numbers:"🔢 Sayılar & Saat",
+  writing:"✏️ Yazma Tahtası", backupPage:"💾 Kayıt & Yedek" });
+document.getElementById("numQuizBtn").onclick = startNumQuiz;
+// yeni modül kartlarını da bağla (mevcut handler parse anında çalıştı, bunlar da var ama garanti)
+document.querySelectorAll(".mod[data-go]").forEach(m => { m.onclick = () => go(m.dataset.go); });
+
+
 load();
 renderStats();
 pickVoice();
 checkBadges();
+wordOfDay();
+initBackup();
 
 if (typeof module !== 'undefined') module.exports = { compose, JONG_IDX, LESSONS, DECKS, SENTENCES, DICT_EASY, DICT_HARD, CHO, JUNG };
 </script>
