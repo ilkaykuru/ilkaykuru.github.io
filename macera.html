@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Unicorn'un Macerası 🦄</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:none; font-family:'Comic Sans MS','Segoe UI',sans-serif; }
+  body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#1a0b3d,#5a3a8c); color:#fff;
+    display:flex; flex-direction:column; align-items:center; padding:6px; overflow:hidden; }
+  .home-btn { position:fixed; top:8px; left:10px; z-index:30; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#6b4a8a; box-shadow:0 4px 12px rgba(0,0,0,.2); text-decoration:none; touch-action:manipulation; }
+  .hud { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:36px 0 4px; }
+  .hud div { background:rgba(255,255,255,.16); border-radius:11px; padding:6px 12px; font-weight:bold; font-size:.9rem; }
+  canvas { background:#6ec6ff; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.35); width:min(98vw,720px); }
+  .pad { position:fixed; bottom:14px; left:0; right:0; display:flex; justify-content:space-between; padding:0 18px; z-index:20; pointer-events:none; }
+  .pad .side { display:flex; gap:12px; pointer-events:auto; }
+  .pad button { width:66px; height:66px; border:none; border-radius:50%; font-size:1.8rem; font-weight:bold;
+    background:rgba(255,255,255,.28); color:#fff; box-shadow:0 4px 12px rgba(0,0,0,.3); }
+  .pad button:active { background:rgba(255,255,255,.5); }
+  .jump { width:84px !important; height:84px !important; background:rgba(255,217,61,.4) !important; }
+  .screen { position:fixed; inset:0; background:rgba(20,8,50,.93); backdrop-filter:blur(6px); display:none;
+    flex-direction:column; align-items:center; justify-content:center; z-index:25; text-align:center; padding:22px; }
+  .screen.show { display:flex; }
+  .screen h2 { font-size:2rem; margin-bottom:10px; } .screen p { font-size:1.1rem; margin:4px 0; }
+  .btn { margin-top:14px; border:none; border-radius:16px; padding:13px 30px; font-weight:bold; font-size:1.1rem;
+    cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; box-shadow:0 6px 18px rgba(255,180,60,.4); }
+  .btn.alt { background:linear-gradient(135deg,#8ec5ff,#5b9df9); color:#0a2a55; }
+  .lvls { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; max-width:340px; margin:14px 0; }
+  .lvls button { width:56px; height:56px; border:none; border-radius:14px; font-weight:bold; font-size:1.2rem; cursor:pointer;
+    background:rgba(255,255,255,.9); color:#6b4a8a; box-shadow:0 4px 10px rgba(0,0,0,.2); }
+  .lvls button.locked { background:rgba(255,255,255,.2); color:rgba(255,255,255,.5); }
+  .hint { font-size:.8rem; opacity:.8; margin-top:6px; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<div class="hud">
+  <div>🏵️ Bölüm: <span id="lvlNo">1</span></div>
+  <div>❤️ Can: <span id="lives">3</span></div>
+  <div>💎 Elmas: <span id="gems">0</span>/<span id="gemsTot">0</span></div>
+  <div>🏆 En iyi: <span id="best">0</span></div>
+</div>
+<canvas id="cv" width="720" height="420"></canvas>
+
+<div class="pad">
+  <div class="side">
+    <button id="leftBtn">⬅️</button>
+    <button id="rightBtn">➡️</button>
+  </div>
+  <div class="side">
+    <button class="jump" id="jumpBtn">⬆️</button>
+  </div>
+</div>
+
+<div class="screen show" id="mapScreen">
+  <h2>🦄 Unicorn'un Macerası</h2>
+  <p>Elmasları topla, düşmanlardan kaç, gökkuşağı kapısına ulaş! 🌈</p>
+  <div class="lvls" id="lvlsGrid"></div>
+  <p class="hint">Üstüne zıplayarak düşmanları yenebilirsin! 👾</p>
+</div>
+
+<div class="screen" id="winScreen">
+  <h2 id="winTitle">🎉 Bölüm Tamam!</h2>
+  <p id="winMsg"></p>
+  <button class="btn" id="nextBtn">▶️ Sonraki</button>
+  <button class="btn alt" onclick="openMap()">🗺️ Bölümler</button>
+</div>
+
+<div class="screen" id="overScreen">
+  <h2>💔 Canın Bitti!</h2>
+  <p id="overMsg"></p>
+  <button class="btn" onclick="startLevel(cur)">🔄 Tekrar Dene</button>
+  <button class="btn alt" onclick="openMap()">🗺️ Bölümler</button>
+</div>
+
+<script>
+  const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  const VW = cv.width, VH = cv.height, T = 40; // tile
+
+  // Bölüm haritaları. Karakterler:
+  // X=zemin, ==platform, .=boş, P=oyuncu başlangıç, C=elmas, E=düşman, S=diken, G=hedef(kapı), ^=zıpla yayı
+  const MAPS = [
+`..........................................
+..........................................
+..........................................
+..............C....C......................
+...........====...====....................
+......C...................C....C..........
+....====.........E.......====..........G..
+..P.................C..................====
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`,
+`..........................................
+..............................C...........
+.................C..........=====.........
+.........C....=====.....................G.
+.......=====.............E........C...=====
+...C.................C.........=====.......
+..====....E.......====....S...............
+..P...........S...........................
+XXXXXXXXXXXXXXXXXXXX...XXXXXXXXXXXXXXXXXXXXX`,
+`.....................C....................
+............C.......====..........C.......
+.........=====...............E..=====.....
+...C..................C..................G.
+.=====...E.......=====................=====
+.........................C................
+..P...S.....S......E...........S..........
+.....................................^....
+XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX`,
+`..C.........................C.............G
+.====.....C.......E.......C....=====...====
+.........====...=====...=====.............
+...C..........................C...........
+.=====...E........S.....E.........=====...
+..............C...................C.......
+..P....S....S.........S.....S.......S.....
+..........................................
+XXXXXXXXXXXXX...XXXXX...XXXXX...XXXXXXXXXXXX`,
+`.........C..........C..........C.........G
+.......=====......=====......=====.....===
+....C............E.....E............C......
+..=====...C..................C...=====.....
+.........====...E.....E....====...........
+..P..S.......S.....S.....S.......S....S....
+..........................................
+............^.............^...............
+XXXXXX...XXXXXX...XXX...XXXXXX...XXXXXXXXXXX`
+  ];
+
+  const SAVE = "maceraDone";
+  let done = {};
+  try { done = JSON.parse(localStorage.getItem(SAVE)) || {}; } catch(e) { done = {}; }
+  let best = 0; try { best = +localStorage.getItem("maceraBest") || 0; } catch(e) {}
+  document.getElementById("best").textContent = best;
+
+  let cur = 0, level, player, cam, keys = {left:false,right:false,jump:false}, raf = null, won, dead;
+
+  function saveDone(){ try { localStorage.setItem(SAVE, JSON.stringify(done)); } catch(e) {} }
+
+  function openMap() {
+    cancelAnimationFrame(raf); raf = null;
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("show"));
+    const g = document.getElementById("lvlsGrid"); g.innerHTML = "";
+    MAPS.forEach((m,i) => {
+      const unlocked = i === 0 || done[i-1];
+      const b = document.createElement("button");
+      b.className = unlocked ? "" : "locked";
+      b.textContent = unlocked ? (done[i] ? "⭐" : (i+1)) : "🔒";
+      if (unlocked) b.onclick = () => startLevel(i);
+      g.appendChild(b);
+    });
+    document.getElementById("mapScreen").classList.add("show");
+  }
+
+  function parseMap(str) {
+    const rows = str.split("\n");
+    const solids = [], gems = [], enemies = [], spikes = [], springs = [];
+    let start = {x:80, y:80}, goal = null;
+    rows.forEach((row, r) => {
+      for (let c = 0; c < row.length; c++) {
+        const ch = row[c], x = c*T, y = r*T;
+        if (ch === "X" || ch === "=") solids.push({x, y, w:T, h:T});
+        else if (ch === "C") gems.push({x:x+T/2, y:y+T/2, got:false});
+        else if (ch === "E") enemies.push({x, y:y+8, w:T-8, h:T-8, dir:-1, vy:0, alive:true, x0:x});
+        else if (ch === "S") spikes.push({x, y:y+T-14, w:T, h:14});
+        else if (ch === "^") springs.push({x, y:y+T-12, w:T, h:12});
+        else if (ch === "P") start = {x, y};
+        else if (ch === "G") goal = {x:x+T/2, y:y+T/2};
+      }
+    });
+    const width = Math.max(...rows.map(r => r.length)) * T;
+    const height = rows.length * T;
+    return { solids, gems, enemies, spikes, springs, start, goal, width, height };
+  }
+
+  function startLevel(i) {
+    cur = i;
+    level = parseMap(MAPS[i]);
+    player = { x: level.start.x, y: level.start.y, w: 30, h: 34, vx:0, vy:0, onGround:false, face:1, lives:3, gems:0, inv:0 };
+    cam = { x: 0 };
+    won = false; dead = false;
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("show"));
+    document.getElementById("lvlNo").textContent = i+1;
+    document.getElementById("gemsTot").textContent = level.gems.length;
+    updateHud();
+    if (!raf) raf = requestAnimationFrame(loop);
+  }
+
+  function updateHud() {
+    document.getElementById("lives").textContent = player.lives;
+    document.getElementById("gems").textContent = player.gems;
+  }
+
+  const GRAV = 0.7, MOVE = 0.9, MAXVX = 5.5, JUMP = 14, FRICTION = 0.8;
+
+  function loop() {
+    update();
+    draw();
+    raf = requestAnimationFrame(loop);
+  }
+
+  function update() {
+    if (won || dead) return;
+    const p = player;
+    // yatay
+    if (keys.left) { p.vx -= MOVE; p.face = -1; }
+    if (keys.right) { p.vx += MOVE; p.face = 1; }
+    if (!keys.left && !keys.right) p.vx *= FRICTION;
+    p.vx = Math.max(-MAXVX, Math.min(MAXVX, p.vx));
+    p.x += p.vx;
+    collide("x");
+    // dikey
+    p.vy += GRAV; if (p.vy > 16) p.vy = 16;
+    p.y += p.vy;
+    p.onGround = false;
+    collide("y");
+    // zıplama
+    if (keys.jump && p.onGround) { p.vy = -JUMP; p.onGround = false; keys.jump = false; }
+    if (p.inv > 0) p.inv--;
+
+    // dünya sınırı / düşme
+    if (p.x < 0) { p.x = 0; p.vx = 0; }
+    if (p.y > level.height + 60) return hurt(true);
+
+    // elmas
+    level.gems.forEach(g => {
+      if (!g.got && Math.abs(g.x - (p.x+p.w/2)) < 26 && Math.abs(g.y - (p.y+p.h/2)) < 30) {
+        g.got = true; p.gems++; updateHud();
+      }
+    });
+    // diken
+    level.spikes.forEach(s => { if (aabb(p, s) && p.inv === 0) hurt(false); });
+    // yay
+    level.springs.forEach(s => { if (aabb(p, s) && p.vy > 0) { p.vy = -JUMP*1.5; } });
+
+    // düşmanlar
+    level.enemies.forEach(e => {
+      if (!e.alive) return;
+      e.x += e.dir * 1.3;
+      // küçük devriye
+      if (Math.abs(e.x - e.x0) > 80) e.dir *= -1;
+      // zemin kenarı kontrolü basit: platform yoksa dön
+      // oyuncu çarpışma
+      if (aabb(p, e)) {
+        if (p.vy > 0 && (p.y + p.h) - e.y < 22) { // üstüne bastı
+          e.alive = false; p.vy = -JUMP*0.7;
+        } else if (p.inv === 0) hurt(false);
+      }
+    });
+
+    // hedef
+    if (level.goal && Math.abs(level.goal.x - (p.x+p.w/2)) < 30 && Math.abs(level.goal.y - (p.y+p.h/2)) < 40) {
+      return winLevel();
+    }
+
+    // kamera
+    cam.x = Math.max(0, Math.min(level.width - VW, p.x - VW/2));
+  }
+
+  function collide(axis) {
+    const p = player;
+    level.solids.forEach(s => {
+      if (!aabb(p, s)) return;
+      if (axis === "x") {
+        if (p.vx > 0) p.x = s.x - p.w;
+        else if (p.vx < 0) p.x = s.x + s.w;
+        p.vx = 0;
+      } else {
+        if (p.vy > 0) { p.y = s.y - p.h; p.onGround = true; }
+        else if (p.vy < 0) p.y = s.y + s.h;
+        p.vy = 0;
+      }
+    });
+  }
+  function aabb(a, b) { return a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y; }
+
+  function hurt(fell) {
+    const p = player;
+    p.lives--; updateHud();
+    if (p.lives <= 0) return gameOver();
+    if (fell) { p.x = level.start.x; p.y = level.start.y; p.vx = 0; p.vy = 0; }
+    p.inv = 90;
+  }
+
+  function winLevel() {
+    won = true;
+    done[cur] = true; saveDone();
+    if (cur+1 > best) { best = cur+1; try { localStorage.setItem("maceraBest", best); } catch(e) {} document.getElementById("best").textContent = best; }
+    const allGems = player.gems === level.gems.length;
+    document.getElementById("winMsg").textContent =
+      `💎 ${player.gems}/${level.gems.length} elmas topladın!` + (allGems ? " Hepsi tamam, mükemmel! ✨" : "");
+    const nb = document.getElementById("nextBtn");
+    if (cur+1 < MAPS.length) { nb.style.display = "inline-block"; nb.onclick = () => startLevel(cur+1); }
+    else { nb.style.display = "none"; document.getElementById("winTitle").textContent = "👑 Tüm Bölümler Bitti!"; }
+    document.getElementById("winScreen").classList.add("show");
+  }
+  function gameOver() {
+    dead = true;
+    document.getElementById("overMsg").textContent = `${player.gems} elmas topladın. Pes etme Eylül! 💪`;
+    document.getElementById("overScreen").classList.add("show");
+  }
+
+  // ---- çizim ----
+  function draw() {
+    ctx.clearRect(0,0,VW,VH);
+    // gökyüzü
+    const grd = ctx.createLinearGradient(0,0,0,VH);
+    grd.addColorStop(0,"#7ec8ff"); grd.addColorStop(1,"#c9eaff");
+    ctx.fillStyle = grd; ctx.fillRect(0,0,VW,VH);
+    // bulutlar (parallax)
+    ctx.font = "34px serif"; ctx.textAlign="left"; ctx.textBaseline="alphabetic";
+    for (let i=0;i<6;i++) ctx.fillText("☁️", ((i*220 - cam.x*0.3) % (VW+120)) - 60, 60 + (i%2)*40);
+
+    ctx.save();
+    ctx.translate(-cam.x, 0);
+
+    // zemin/platform
+    level.solids.forEach(s => {
+      ctx.fillStyle = s.y >= level.height - T ? "#7a5230" : "#9b6b3a";
+      ctx.fillRect(s.x, s.y, s.w, s.h);
+      ctx.fillStyle = "#5fbf5f"; ctx.fillRect(s.x, s.y, s.w, 8);
+    });
+    // dikenler
+    ctx.font = "24px serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    level.spikes.forEach(s => ctx.fillText("🔺", s.x+T/2, s.y+2));
+    // yaylar
+    level.springs.forEach(s => ctx.fillText("🟡", s.x+T/2, s.y-2));
+    // elmaslar
+    level.gems.forEach(g => { if (!g.got) { ctx.font = "22px serif"; ctx.fillText("💎", g.x, g.y); } });
+    // hedef
+    if (level.goal) { ctx.font = "40px serif"; ctx.fillText("🌈", level.goal.x, level.goal.y); }
+    // düşmanlar
+    ctx.font = "26px serif";
+    level.enemies.forEach(e => { if (e.alive) ctx.fillText("👾", e.x+e.w/2, e.y+e.h/2); });
+    // oyuncu
+    const p = player;
+    if (!(p.inv > 0 && Math.floor(p.inv/6)%2)) {
+      ctx.save(); ctx.translate(p.x+p.w/2, p.y+p.h/2); if (p.face<0) ctx.scale(-1,1);
+      ctx.font = "32px serif"; ctx.fillText("🦄", 0, 0); ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // ---- kontroller ----
+  function bind(id, key) {
+    const el = document.getElementById(id);
+    const on = e => { e.preventDefault(); keys[key] = true; };
+    const off = e => { e.preventDefault(); keys[key] = false; };
+    el.addEventListener("touchstart", on, {passive:false});
+    el.addEventListener("touchend", off, {passive:false});
+    el.addEventListener("mousedown", on);
+    el.addEventListener("mouseup", off);
+    el.addEventListener("mouseleave", off);
+  }
+  bind("leftBtn","left"); bind("rightBtn","right");
+  // jump tek seferlik
+  const jb = document.getElementById("jumpBtn");
+  const doJump = e => { e.preventDefault(); keys.jump = true; };
+  jb.addEventListener("touchstart", doJump, {passive:false});
+  jb.addEventListener("mousedown", doJump);
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft") keys.left = true;
+    else if (e.key === "ArrowRight") keys.right = true;
+    else if (e.key === "ArrowUp" || e.key === " ") { keys.jump = true; e.preventDefault(); }
+  });
+  document.addEventListener("keyup", e => {
+    if (e.key === "ArrowLeft") keys.left = false;
+    else if (e.key === "ArrowRight") keys.right = false;
+  });
+
+  openMap();
+</script>
+</body>
+</html>

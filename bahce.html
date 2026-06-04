@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Büyü Bahçesi 🍬</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Comic Sans MS','Segoe UI',sans-serif; }
+  body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#3a1c5e 0%,#7d4ba0 55%,#f5a8d0 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center; padding:10px; overflow-x:hidden; }
+  .home-btn { position:fixed; top:10px; left:12px; z-index:30; border-radius:16px; padding:9px 15px; font-size:1rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#6b4a8a; box-shadow:0 4px 12px rgba(0,0,0,.2); text-decoration:none; }
+  h1 { font-size:clamp(1.2rem,4.5vw,1.8rem); margin:42px 0 6px; text-shadow:0 3px 10px rgba(0,0,0,.4); }
+  .topbar { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:8px; }
+  .topbar div { background:rgba(255,255,255,.18); border-radius:12px; padding:7px 13px; font-weight:bold; font-size:.92rem; }
+  .goals { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-bottom:8px; min-height:34px; }
+  .goal { background:rgba(0,0,0,.25); border-radius:12px; padding:5px 11px; font-weight:bold; font-size:1.05rem; }
+  .goal.done { background:rgba(80,220,120,.4); }
+  #grid { display:grid; gap:3px; background:rgba(0,0,0,.22); padding:6px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); touch-action:none; }
+  .cell { width:var(--cs); height:var(--cs); display:flex; align-items:center; justify-content:center;
+    font-size:calc(var(--cs) * .62); border-radius:10px; background:rgba(255,255,255,.07); cursor:pointer;
+    transition:transform .13s, opacity .18s; position:relative; }
+  .cell.sel { transform:scale(1.18); background:rgba(255,255,255,.3); z-index:2; }
+  .cell.pop { animation:pop .22s forwards; }
+  @keyframes pop { to { transform:scale(0); opacity:0; } }
+  .cell.special::after { content:""; position:absolute; inset:4px; border-radius:8px; box-shadow:0 0 12px 3px gold; pointer-events:none; }
+  .cell.rainbow { background:conic-gradient(red,orange,yellow,green,cyan,blue,violet,red); }
+  .screen { position:fixed; inset:0; background:rgba(30,10,55,.92); backdrop-filter:blur(6px); display:none;
+    flex-direction:column; align-items:center; justify-content:center; z-index:20; text-align:center; padding:22px; }
+  .screen.show { display:flex; }
+  .screen h2 { font-size:2rem; margin-bottom:8px; }
+  .screen p { font-size:1.15rem; margin:5px 0; }
+  .stars { font-size:2.6rem; margin:8px 0; letter-spacing:4px; }
+  .btn { margin-top:14px; border:none; border-radius:16px; padding:13px 30px; font-weight:bold; font-size:1.1rem;
+    cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; box-shadow:0 6px 18px rgba(255,180,60,.4); }
+  .btn.alt { background:linear-gradient(135deg,#8ec5ff,#5b9df9); color:#0a2a55; }
+  .levels-grid { display:grid; grid-template-columns:repeat(5,minmax(48px,1fr)); gap:10px; max-width:380px; margin:14px 0; }
+  .lvl-btn { aspect-ratio:1; border:none; border-radius:14px; font-weight:bold; font-size:1.1rem; cursor:pointer;
+    background:rgba(255,255,255,.9); color:#6b4a8a; box-shadow:0 4px 10px rgba(0,0,0,.2); display:flex;
+    flex-direction:column; align-items:center; justify-content:center; gap:1px; }
+  .lvl-btn.locked { background:rgba(255,255,255,.2); color:rgba(255,255,255,.5); cursor:default; }
+  .lvl-btn small { font-size:.6rem; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>🍬 Büyü Bahçesi</h1>
+<div class="topbar">
+  <div>🏵️ Bölüm: <span id="lvlNo">1</span></div>
+  <div>👆 Hamle: <span id="movesLeft">20</span></div>
+  <div>⭐ Skor: <span id="score">0</span></div>
+</div>
+<div class="goals" id="goals"></div>
+<div id="grid"></div>
+
+<!-- Bölüm seçim -->
+<div class="screen show" id="mapScreen">
+  <h2>🍬 Büyü Bahçesi</h2>
+  <p>Bir bölüm seç! Hedefleri tamamla, 3 yıldız topla.</p>
+  <div class="levels-grid" id="levelsGrid"></div>
+  <p style="font-size:.85rem;opacity:.8">Toplam ⭐: <span id="totalStars">0</span> / <span id="maxStars">0</span></p>
+</div>
+
+<!-- Kazanma -->
+<div class="screen" id="winScreen">
+  <h2 id="winTitle">🎉 Bölüm Tamam!</h2>
+  <div class="stars" id="winStars"></div>
+  <p id="winScore"></p>
+  <p id="winMsg"></p>
+  <button class="btn" id="nextBtn">▶️ Sonraki Bölüm</button>
+  <button class="btn alt" onclick="openMap()">🗺️ Bölümler</button>
+</div>
+
+<!-- Kaybetme -->
+<div class="screen" id="loseScreen">
+  <h2>💧 Hamleler Bitti!</h2>
+  <p id="loseMsg">Hedefe çok yaklaştın!</p>
+  <button class="btn" onclick="startLevel(cur)">🔄 Tekrar Dene</button>
+  <button class="btn alt" onclick="openMap()">🗺️ Bölümler</button>
+</div>
+
+<script>
+  const GEMS = ["🍓","🫐","🍋","🍇","🍏","🍊"]; // 6 tür
+  const RAINBOW = "🌈";
+  // Bölümler: hedefler ve hamle. type: 'score' | 'collect'
+  const LEVELS = [
+    { moves:18, size:7, goals:[{type:"score", target:1500}] },
+    { moves:18, size:7, goals:[{type:"collect", gem:0, count:15}] },
+    { moves:16, size:7, goals:[{type:"collect", gem:1, count:12},{type:"collect", gem:2, count:12}] },
+    { moves:20, size:8, goals:[{type:"score", target:3000}] },
+    { moves:18, size:8, goals:[{type:"collect", gem:3, count:20}] },
+    { moves:16, size:8, goals:[{type:"collect", gem:0, count:14},{type:"collect", gem:4, count:14}] },
+    { moves:20, size:8, goals:[{type:"score", target:5000}] },
+    { moves:18, size:8, goals:[{type:"collect", gem:5, count:22}] },
+    { moves:22, size:8, goals:[{type:"collect", gem:1, count:18},{type:"collect", gem:2, count:18},{type:"collect", gem:3, count:18}] },
+    { moves:18, size:8, goals:[{type:"score", target:7000}] },
+    { moves:16, size:8, goals:[{type:"collect", gem:4, count:25}] },
+    { moves:20, size:9, goals:[{type:"score", target:9000}] },
+    { moves:22, size:9, goals:[{type:"collect", gem:0, count:20},{type:"collect", gem:5, count:20}] },
+    { moves:18, size:9, goals:[{type:"score", target:11000}] },
+    { moves:20, size:9, goals:[{type:"collect", gem:2, count:30}] },
+    { moves:18, size:9, goals:[{type:"score", target:13000}] },
+    { moves:22, size:9, goals:[{type:"collect", gem:1, count:22},{type:"collect", gem:3, count:22},{type:"collect", gem:4, count:22}] },
+    { moves:20, size:9, goals:[{type:"score", target:16000}] },
+    { moves:18, size:9, goals:[{type:"collect", gem:5, count:32}] },
+    { moves:24, size:9, goals:[{type:"score", target:20000}] }
+  ];
+
+  const SAVE_KEY = "bahceStars";
+  let stars = {};
+  try { stars = JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch(e) { stars = {}; }
+
+  let N, grid, board, cur = 0, moves, score, goals, collected, busy = false, sel = null;
+  const gridEl = document.getElementById("grid");
+
+  function saveStars() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(stars)); } catch(e) {} }
+
+  function openMap() {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("show"));
+    const g = document.getElementById("levelsGrid"); g.innerHTML = "";
+    let tot = 0;
+    LEVELS.forEach((lv, i) => {
+      const unlocked = i === 0 || stars[i-1] > 0;
+      const st = stars[i] || 0; tot += st;
+      const b = document.createElement("button");
+      b.className = "lvl-btn" + (unlocked ? "" : " locked");
+      b.innerHTML = unlocked ? `${i+1}<small>${"⭐".repeat(st) || "·"}</small>` : "🔒";
+      if (unlocked) b.onclick = () => startLevel(i);
+      g.appendChild(b);
+    });
+    document.getElementById("totalStars").textContent = tot;
+    document.getElementById("maxStars").textContent = LEVELS.length * 3;
+    document.getElementById("mapScreen").classList.add("show");
+  }
+
+  function startLevel(i) {
+    cur = i;
+    const lv = LEVELS[i];
+    N = lv.size; moves = lv.moves; score = 0;
+    goals = lv.goals.map(g => ({...g, got:0}));
+    collected = {};
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("show"));
+    document.getElementById("lvlNo").textContent = i + 1;
+    sizeGrid();
+    buildBoard();
+    renderGoals();
+    updateHud();
+  }
+
+  function sizeGrid() {
+    const maxW = Math.min(window.innerWidth - 24, 460);
+    const cs = Math.floor((maxW - (N+1)*3 - 12) / N);
+    document.documentElement.style.setProperty("--cs", cs + "px");
+    gridEl.style.gridTemplateColumns = `repeat(${N}, ${cs}px)`;
+  }
+
+  function buildBoard() {
+    // başlangıçta eşleşme olmayan tahta
+    do {
+      board = [];
+      for (let r = 0; r < N; r++) {
+        board[r] = [];
+        for (let c = 0; c < N; c++) board[r][c] = { g: rand(), sp: 0 };
+      }
+    } while (findMatches().length > 0 || !hasMove());
+    render();
+  }
+
+  const rand = () => Math.floor(Math.random() * GEMS.length);
+
+  function render() {
+    gridEl.innerHTML = "";
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const cell = board[r][c];
+      const d = document.createElement("div");
+      d.className = "cell" + (cell.sp === 1 ? " special" : "") + (cell.sp === 2 ? " rainbow" : "");
+      d.dataset.r = r; d.dataset.c = c;
+      d.textContent = cell.sp === 2 ? RAINBOW : GEMS[cell.g];
+      gridEl.appendChild(d);
+    }
+  }
+
+  function cellEl(r, c) { return gridEl.querySelector(`[data-r="${r}"][data-c="${c}"]`); }
+
+  // ---- giriş ----
+  gridEl.addEventListener("click", e => {
+    const t = e.target.closest(".cell"); if (!t || busy) return;
+    const r = +t.dataset.r, c = +t.dataset.c;
+    if (!sel) { sel = {r,c}; t.classList.add("sel"); return; }
+    if (sel.r === r && sel.c === c) { t.classList.remove("sel"); sel = null; return; }
+    const adj = Math.abs(sel.r - r) + Math.abs(sel.c - c) === 1;
+    cellEl(sel.r, sel.c)?.classList.remove("sel");
+    if (adj) trySwap(sel, {r,c});
+    sel = null;
+  });
+  let sx, sy, ssel;
+  gridEl.addEventListener("touchstart", e => {
+    const t = e.target.closest(".cell"); if (!t || busy) return;
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+    ssel = { r:+t.dataset.r, c:+t.dataset.c };
+  }, {passive:true});
+  gridEl.addEventListener("touchend", e => {
+    if (!ssel || busy) return;
+    const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) < 18 && Math.abs(dy) < 18) { ssel = null; return; } // tıklama olarak işlenir
+    let nr = ssel.r, nc = ssel.c;
+    if (Math.abs(dx) > Math.abs(dy)) nc += Math.sign(dx); else nr += Math.sign(dy);
+    if (nr >= 0 && nc >= 0 && nr < N && nc < N) trySwap(ssel, {r:nr, c:nc});
+    ssel = null;
+  }, {passive:true});
+
+  async function trySwap(a, b) {
+    busy = true;
+    swap(a, b); render();
+    const ca = board[a.r][a.c], cb = board[b.r][b.c];
+    // gökkuşağı kullanımı
+    if (ca.sp === 2 || cb.sp === 2) {
+      const rb = ca.sp === 2 ? a : b;
+      const other = ca.sp === 2 ? cb : ca;
+      await useRainbow(rb, other.g);
+      consumeMove();
+      await resolve();
+      busy = false; return;
+    }
+    const m = findMatches();
+    if (m.length === 0) { await sleep(160); swap(a, b); render(); busy = false; return; }
+    consumeMove();
+    await resolve(a, b);
+    busy = false;
+  }
+
+  function swap(a, b) { const t = board[a.r][a.c]; board[a.r][a.c] = board[b.r][b.c]; board[b.r][b.c] = t; }
+
+  function consumeMove() { moves--; updateHud(); }
+
+  async function resolve(swapA, swapB) {
+    let combo = 0;
+    while (true) {
+      const matches = findMatches();
+      if (matches.length === 0) break;
+      combo++;
+      // özel oluşturma: 4+ uzunluğunda grup
+      const toClear = new Set();
+      const specials = [];
+      matches.forEach(grp => {
+        grp.cells.forEach(([r,c]) => toClear.add(r + "," + c));
+        if (grp.cells.length >= 5) {
+          specials.push({ at: grp.cells[Math.floor(grp.cells.length/2)], sp: 2 });
+        } else if (grp.cells.length === 4) {
+          const at = (swapA && inGrp(grp, swapA)) ? swapA : (swapB && inGrp(grp, swapB)) ? swapB : grp.cells[0];
+          specials.push({ at:[at.r ?? at[0], at.c ?? at[1]], sp:1, g: board[grp.cells[0][0]][grp.cells[0][1]].g });
+        }
+      });
+      // skor + toplama + patlama animasyonu
+      let gained = 0;
+      toClear.forEach(k => {
+        const [r,c] = k.split(",").map(Number);
+        const cell = board[r][c];
+        gained += 60 * combo;
+        countGem(cell.sp === 2 ? -1 : cell.g);
+        // çizgi gücü patlarsa komşuları da temizle
+        if (cell.sp === 1) explodeLine(r, c, toClear);
+        cellEl(r,c)?.classList.add("pop");
+      });
+      score += gained;
+      updateHud();
+      await sleep(200);
+      // sil
+      toClear.forEach(k => { const [r,c] = k.split(",").map(Number); board[r][c] = null; });
+      // özelleri yerleştir
+      specials.forEach(s => {
+        const [r,c] = Array.isArray(s.at) ? s.at : [s.at.r, s.at.c];
+        board[r][c] = { g: s.g ?? rand(), sp: s.sp };
+      });
+      collapse(); refill(); render();
+      await sleep(160);
+      checkGoals();
+    }
+    render();
+    afterTurn();
+  }
+
+  function inGrp(grp, p) { return grp.cells.some(([r,c]) => r === p.r && c === p.c); }
+
+  function explodeLine(r, c, toClear) {
+    // satır + sütun temizle (çizgi gücü)
+    for (let i = 0; i < N; i++) { toClear.add(r + "," + i); toClear.add(i + "," + c); }
+  }
+
+  async function useRainbow(at, targetGem) {
+    // hedef renkteki tüm parçaları temizle
+    const toClear = new Set([at.r + "," + at.c]);
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      if (board[r][c] && board[r][c].g === targetGem && board[r][c].sp !== 2) toClear.add(r+","+c);
+    }
+    let gained = 0;
+    toClear.forEach(k => { const [r,c] = k.split(",").map(Number);
+      gained += 120; countGem(board[r][c]?.sp === 2 ? -1 : targetGem); cellEl(r,c)?.classList.add("pop"); });
+    score += gained; updateHud();
+    await sleep(220);
+    toClear.forEach(k => { const [r,c] = k.split(",").map(Number); board[r][c] = null; });
+    collapse(); refill(); render(); checkGoals();
+  }
+
+  function countGem(g) {
+    if (g < 0) return;
+    collected[g] = (collected[g] || 0) + 1;
+    goals.forEach(go => { if (go.type === "collect" && go.gem === g) go.got = Math.min(go.count, go.got + 1); });
+  }
+
+  function findMatches() {
+    const groups = [];
+    const seen = () => {};
+    // yatay
+    for (let r = 0; r < N; r++) {
+      let run = [[r,0]];
+      for (let c = 1; c < N; c++) {
+        if (board[r][c] && board[r][c-1] && board[r][c].g === board[r][c-1].g && board[r][c].sp !== 2 && board[r][c-1].sp !== 2)
+          run.push([r,c]);
+        else { if (run.length >= 3) groups.push({cells:[...run], dir:"h"}); run = [[r,c]]; }
+      }
+      if (run.length >= 3) groups.push({cells:[...run], dir:"h"});
+    }
+    // dikey
+    for (let c = 0; c < N; c++) {
+      let run = [[0,c]];
+      for (let r = 1; r < N; r++) {
+        if (board[r][c] && board[r-1][c] && board[r][c].g === board[r-1][c].g && board[r][c].sp !== 2 && board[r-1][c].sp !== 2)
+          run.push([r,c]);
+        else { if (run.length >= 3) groups.push({cells:[...run], dir:"v"}); run = [[r,c]]; }
+      }
+      if (run.length >= 3) groups.push({cells:[...run], dir:"v"});
+    }
+    return groups;
+  }
+
+  function collapse() {
+    for (let c = 0; c < N; c++) {
+      let pointer = N - 1;
+      for (let r = N - 1; r >= 0; r--) {
+        if (board[r][c]) { board[pointer][c] = board[r][c]; if (pointer !== r) board[r][c] = null; pointer--; }
+      }
+      for (let r = pointer; r >= 0; r--) board[r][c] = null;
+    }
+  }
+  function refill() {
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++)
+      if (!board[r][c]) board[r][c] = { g: rand(), sp: 0 };
+  }
+
+  function hasMove() {
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      if (c < N-1) { swapRaw(r,c,r,c+1); if (findMatches().length) { swapRaw(r,c,r,c+1); return true; } swapRaw(r,c,r,c+1); }
+      if (r < N-1) { swapRaw(r,c,r+1,c); if (findMatches().length) { swapRaw(r,c,r+1,c); return true; } swapRaw(r,c,r+1,c); }
+    }
+    return false;
+  }
+  function swapRaw(r1,c1,r2,c2){ const t=board[r1][c1]; board[r1][c1]=board[r2][c2]; board[r2][c2]=t; }
+
+  function afterTurn() {
+    if (allGoalsDone()) return win();
+    if (moves <= 0) return lose();
+    if (!hasMove()) { // karıştır
+      do { reshuffle(); } while (findMatches().length || !hasMove());
+      render();
+    }
+  }
+  function reshuffle() {
+    const flat = [];
+    for (let r=0;r<N;r++) for (let c=0;c<N;c++) flat.push(board[r][c]);
+    for (let i=flat.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [flat[i],flat[j]]=[flat[j],flat[i]]; }
+    let k=0; for (let r=0;r<N;r++) for (let c=0;c<N;c++) board[r][c]=flat[k++];
+  }
+
+  function renderGoals() {
+    const el = document.getElementById("goals"); el.innerHTML = "";
+    goals.forEach(g => {
+      const d = document.createElement("div"); d.className = "goal";
+      d.dataset.k = goalKey(g);
+      el.appendChild(d);
+    });
+    updateGoals();
+  }
+  function goalKey(g){ return g.type === "score" ? "score" : "gem"+g.gem; }
+  function updateGoals() {
+    goals.forEach(g => {
+      const d = document.querySelector(`.goal[data-k="${goalKey(g)}"]`);
+      if (!d) return;
+      if (g.type === "score") { d.textContent = `⭐ ${score}/${g.target}`; d.classList.toggle("done", score >= g.target); }
+      else { d.textContent = `${GEMS[g.gem]} ${g.got}/${g.count}`; d.classList.toggle("done", g.got >= g.count); }
+    });
+  }
+  function checkGoals(){ updateGoals(); }
+  function allGoalsDone(){ return goals.every(g => g.type === "score" ? score >= g.target : g.got >= g.count); }
+
+  function updateHud() {
+    document.getElementById("movesLeft").textContent = moves;
+    document.getElementById("score").textContent = score;
+    updateGoals();
+  }
+
+  function calcStars() {
+    // hamle ne kadar arttı kaldıysa o kadar yıldız
+    const lv = LEVELS[cur];
+    const ratio = moves / lv.moves;
+    if (ratio >= 0.4) return 3;
+    if (ratio >= 0.15) return 2;
+    return 1;
+  }
+
+  function win() {
+    const s = calcStars();
+    if (!stars[cur] || stars[cur] < s) { stars[cur] = s; saveStars(); }
+    document.getElementById("winStars").textContent = "⭐".repeat(s) + "☆".repeat(3-s);
+    document.getElementById("winScore").textContent = `Skor: ${score}`;
+    document.getElementById("winMsg").textContent = ["Süpersin Eylül! 🌸","Bahçe çiçek açtı! 🌼","Tatlı bir zafer! 🍬"][Math.floor(Math.random()*3)];
+    const nb = document.getElementById("nextBtn");
+    if (cur + 1 < LEVELS.length) { nb.style.display = "inline-block"; nb.onclick = () => startLevel(cur+1); }
+    else nb.style.display = "none";
+    document.getElementById("winScreen").classList.add("show");
+  }
+  function lose() {
+    document.getElementById("loseScreen").classList.add("show");
+  }
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  window.addEventListener("resize", () => { if (board) { sizeGrid(); render(); } });
+
+  openMap();
+</script>
+</body>
+</html>

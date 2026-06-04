@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Sevimli Dostum 🐾</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Comic Sans MS','Segoe UI',sans-serif; }
+  body { min-height:100vh; min-height:100dvh; color:#5a3a6e;
+    background:linear-gradient(160deg,#ffe0f0 0%,#e6e0ff 55%,#d9f5ff 100%);
+    display:flex; flex-direction:column; align-items:center; padding:8px; overflow-x:hidden; }
+  .home-btn { position:fixed; top:8px; left:10px; z-index:30; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:#fff; color:#a14ec9; box-shadow:0 4px 12px rgba(160,80,200,.25); text-decoration:none; }
+  h1 { font-size:clamp(1.2rem,4.5vw,1.8rem); margin:40px 0 4px; color:#a14ec9; text-shadow:1px 1px 0 #fff; }
+  .coins { background:#fff; border-radius:14px; padding:6px 14px; font-weight:bold; box-shadow:0 4px 10px rgba(160,80,200,.15); margin-bottom:8px; }
+  .room {
+    position:relative; width:min(94vw,440px); aspect-ratio:1; border-radius:24px; overflow:hidden;
+    box-shadow:0 10px 30px rgba(120,80,160,.3); transition:background .5s;
+  }
+  .pet {
+    position:absolute; left:50%; top:54%; transform:translate(-50%,-50%); font-size:6rem;
+    transition:transform .2s; cursor:pointer; filter:drop-shadow(0 6px 8px rgba(0,0,0,.2));
+  }
+  .pet.bounce { animation:bounce .5s; }
+  @keyframes bounce { 0%,100%{ transform:translate(-50%,-50%) scale(1);} 50%{ transform:translate(-50%,-50%) scale(1.18) rotate(-6deg);} }
+  .pet.sad { filter:grayscale(.5) drop-shadow(0 6px 8px rgba(0,0,0,.2)); }
+  .emote { position:absolute; font-size:2rem; animation:floatUp 1.2s forwards; pointer-events:none; }
+  @keyframes floatUp { from{ opacity:1; transform:translateY(0);} to{ opacity:0; transform:translateY(-70px);} }
+  .zzz { position:absolute; left:62%; top:38%; font-size:1.8rem; animation:zzz 2s infinite; }
+  @keyframes zzz { 0%{opacity:0;transform:translateY(0) scale(.6)} 50%{opacity:1} 100%{opacity:0;transform:translateY(-30px) scale(1.1)} }
+  .name { position:absolute; top:10px; left:0; right:0; text-align:center; font-weight:bold; color:#fff; text-shadow:0 2px 4px rgba(0,0,0,.3); font-size:1.1rem; }
+  .stats { width:min(94vw,440px); margin-top:10px; display:flex; flex-direction:column; gap:7px; }
+  .stat { display:flex; align-items:center; gap:8px; }
+  .stat .lab { width:78px; font-weight:bold; font-size:.9rem; }
+  .bar { flex:1; height:18px; background:rgba(255,255,255,.6); border-radius:10px; overflow:hidden; box-shadow:inset 0 1px 3px rgba(0,0,0,.15); }
+  .bar > div { height:100%; border-radius:10px; transition:width .4s; }
+  .actions { width:min(94vw,440px); display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px; }
+  .act { border:none; border-radius:16px; padding:12px 4px; background:#fff; cursor:pointer; box-shadow:0 4px 10px rgba(160,80,200,.18);
+    display:flex; flex-direction:column; align-items:center; gap:2px; transition:transform .12s; }
+  .act:active { transform:scale(.92); }
+  .act .ic { font-size:1.7rem; } .act .nm { font-size:.72rem; font-weight:bold; }
+  .act.locked { opacity:.5; }
+  .panel { position:fixed; inset:0; background:rgba(90,58,110,.7); backdrop-filter:blur(5px); display:none;
+    align-items:center; justify-content:center; z-index:25; padding:18px; }
+  .panel.show { display:flex; }
+  .card { background:#fff; border-radius:22px; padding:18px; width:min(92vw,400px); text-align:center; box-shadow:0 12px 30px rgba(0,0,0,.3); }
+  .card h3 { color:#a14ec9; margin-bottom:8px; font-size:1.3rem; }
+  .shop-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:10px 0; }
+  .shop-item { border:2px solid #eee; border-radius:14px; padding:8px 4px; cursor:pointer; }
+  .shop-item:active { background:#f3e0ff; }
+  .shop-item .ic { font-size:1.6rem; } .shop-item .pr { font-size:.72rem; color:#c060a0; font-weight:bold; }
+  .closeX { margin-top:8px; border:none; border-radius:14px; padding:10px 24px; font-weight:bold; cursor:pointer;
+    background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; font-size:1rem; }
+  /* mini oyun */
+  #miniArea { position:relative; width:100%; aspect-ratio:1.4; background:linear-gradient(#bfe9ff,#e8f7ff); border-radius:16px; overflow:hidden; }
+  .falling { position:absolute; font-size:1.8rem; }
+  #basket { position:absolute; bottom:6px; font-size:2.2rem; transform:translateX(-50%); }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>🐾 Sevimli Dostum</h1>
+<div class="coins">💰 <span id="coins">20</span> jeton</div>
+
+<div class="room" id="room">
+  <div class="name" id="petName"></div>
+  <div class="pet" id="pet">🦄</div>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="lab">🍎 Açlık</span><div class="bar"><div id="barHunger"></div></div></div>
+  <div class="stat"><span class="lab">😊 Mutluluk</span><div class="bar"><div id="barHappy"></div></div></div>
+  <div class="stat"><span class="lab">⚡ Enerji</span><div class="bar"><div id="barEnergy"></div></div></div>
+  <div class="stat"><span class="lab">🧼 Temizlik</span><div class="bar"><div id="barClean"></div></div></div>
+</div>
+
+<div class="actions">
+  <button class="act" id="feedBtn"><span class="ic">🍎</span><span class="nm">Besle</span></button>
+  <button class="act" id="playBtn"><span class="ic">🎮</span><span class="nm">Oyna</span></button>
+  <button class="act" id="sleepBtn"><span class="ic">😴</span><span class="nm">Uyut</span></button>
+  <button class="act" id="cleanBtn"><span class="ic">🧼</span><span class="nm">Yıka</span></button>
+  <button class="act" id="petBtn"><span class="ic">💖</span><span class="nm">Sev</span></button>
+  <button class="act" id="shopBtn"><span class="ic">🛍️</span><span class="nm">Mağaza</span></button>
+  <button class="act" id="dressBtn"><span class="ic">👒</span><span class="nm">Giydir</span></button>
+  <button class="act" id="miniBtn"><span class="ic">🍓</span><span class="nm">Mini Oyun</span></button>
+</div>
+
+<!-- Mağaza -->
+<div class="panel" id="shopPanel">
+  <div class="card">
+    <h3>🛍️ Mağaza</h3>
+    <p style="font-size:.85rem">Jetonla yiyecek ve kıyafet al!</p>
+    <div class="shop-grid" id="shopGrid"></div>
+    <button class="closeX" onclick="closePanels()">Kapat</button>
+  </div>
+</div>
+
+<!-- Giydirme -->
+<div class="panel" id="dressPanel">
+  <div class="card">
+    <h3>👗 Giydirme Odası</h3>
+    <div class="shop-grid" id="dressGrid"></div>
+    <button class="closeX" onclick="closePanels()">Tamam</button>
+  </div>
+</div>
+
+<!-- Mini oyun: meyve yakala -->
+<div class="panel" id="miniPanel">
+  <div class="card">
+    <h3>🍓 Meyve Yakala</h3>
+    <p style="font-size:.85rem">Sepeti kaydır, meyveleri topla! Jeton kazan.</p>
+    <div id="miniArea"></div>
+    <p style="margin-top:6px;font-weight:bold">⏱️ <span id="miniTime">20</span>s · 🍓 <span id="miniScore">0</span></p>
+    <button class="closeX" id="miniClose">Bitir</button>
+  </div>
+</div>
+
+<!-- isim sorma -->
+<div class="panel" id="namePanel">
+  <div class="card">
+    <h3>🦄 Yeni Dostun Geldi!</h3>
+    <p>Ona bir isim ver:</p>
+    <input id="nameInput" maxlength="12" placeholder="örn. Pırıltı" style="width:100%;padding:12px;margin:12px 0;border:2px solid #e0c0f0;border-radius:12px;font-size:1.1rem;text-align:center;font-family:inherit">
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:8px">
+      <button class="petpick closeX" style="background:#f3e0ff;color:#a14ec9" data-p="🦄">🦄</button>
+      <button class="petpick closeX" style="background:#f3e0ff;color:#a14ec9" data-p="🐱">🐱</button>
+      <button class="petpick closeX" style="background:#f3e0ff;color:#a14ec9" data-p="🐰">🐰</button>
+      <button class="petpick closeX" style="background:#f3e0ff;color:#a14ec9" data-p="🐉">🐉</button>
+    </div>
+    <button class="closeX" id="nameOk">Başla! ✨</button>
+  </div>
+</div>
+
+<script>
+  const SAVE = "dostumSave";
+  const FOODS = { "🍎":{c:0,h:18}, "🍓":{c:2,h:14}, "🍰":{c:5,h:28,happy:10}, "🍕":{c:6,h:35}, "🍪":{c:3,h:16,happy:6}, "🥕":{c:1,h:12} };
+  const HATS = { "yok":{c:0,e:""}, "👒":{c:8,e:"👒"}, "🎀":{c:6,e:"🎀"}, "👑":{c:20,e:"👑"}, "🧢":{c:10,e:"🧢"}, "🎩":{c:15,e:"🎩"} };
+
+  let S; // state
+  function fresh() {
+    return { name:"", pet:"🦄", hat:"yok", coins:20, hunger:80, happy:80, energy:80, clean:80,
+      inv:{"🍎":3,"🥕":2}, lastTs: Date.now(), sleeping:false };
+  }
+  function load() {
+    try { S = JSON.parse(localStorage.getItem(SAVE)); } catch(e) { S = null; }
+    if (!S || !S.name) { S = fresh(); askName(); }
+    else { applyOffline(); }
+  }
+  function save() { try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch(e) {} }
+
+  function applyOffline() {
+    // geçen süreye göre ihtiyaçlar azalır
+    const mins = Math.min(720, (Date.now() - (S.lastTs||Date.now())) / 60000);
+    S.hunger = clamp(S.hunger - mins*0.4);
+    S.happy = clamp(S.happy - mins*0.3);
+    S.energy = clamp(S.energy - (S.sleeping ? -mins*0.8 : mins*0.25));
+    S.clean = clamp(S.clean - mins*0.2);
+    S.sleeping = false;
+    S.lastTs = Date.now();
+  }
+
+  const clamp = v => Math.max(0, Math.min(100, v));
+
+  function askName() {
+    document.getElementById("namePanel").classList.add("show");
+    document.querySelectorAll(".petpick").forEach(b => b.onclick = () => {
+      document.querySelectorAll(".petpick").forEach(x => x.style.outline = "");
+      b.style.outline = "3px solid #a14ec9"; S.pet = b.dataset.p; render();
+    });
+    document.getElementById("nameOk").onclick = () => {
+      const n = document.getElementById("nameInput").value.trim() || "Pırıltı";
+      S.name = n; save();
+      document.getElementById("namePanel").classList.remove("show");
+    };
+  }
+
+  // ---- aksiyonlar ----
+  function emote(em) {
+    const r = document.getElementById("room");
+    const e = document.createElement("div"); e.className = "emote"; e.textContent = em;
+    e.style.left = (40 + Math.random()*40) + "%"; e.style.top = "40%";
+    r.appendChild(e); setTimeout(() => e.remove(), 1200);
+  }
+  function bounce() { const p = document.getElementById("pet"); p.classList.remove("bounce"); void p.offsetWidth; p.classList.add("bounce"); }
+
+  document.getElementById("feedBtn").onclick = () => openShop("eat");
+  document.getElementById("playBtn").onclick = () => {
+    if (S.energy < 12) { emote("😴"); flash("Çok yorgun, önce uyusun!"); return; }
+    S.happy = clamp(S.happy + 16); S.energy = clamp(S.energy - 10); S.hunger = clamp(S.hunger - 6);
+    bounce(); emote("🎉"); S.coins += 1; afterAction();
+  };
+  document.getElementById("sleepBtn").onclick = () => {
+    S.sleeping = !S.sleeping;
+    document.getElementById("sleepBtn").querySelector(".nm").textContent = S.sleeping ? "Uyandır" : "Uyut";
+    emote(S.sleeping ? "😴" : "☀️"); afterAction();
+  };
+  document.getElementById("cleanBtn").onclick = () => {
+    S.clean = clamp(S.clean + 30); S.happy = clamp(S.happy + 4); emote("🫧"); bounce(); afterAction();
+  };
+  document.getElementById("petBtn").onclick = () => { S.happy = clamp(S.happy + 8); emote("💖"); bounce(); afterAction(); };
+  document.getElementById("pet").onclick = () => { S.happy = clamp(S.happy + 4); emote("💕"); bounce(); afterAction(); };
+  document.getElementById("shopBtn").onclick = () => openShop("buy");
+  document.getElementById("dressBtn").onclick = openDress;
+  document.getElementById("miniBtn").onclick = startMini;
+
+  function flash(msg) {
+    const r = document.getElementById("room");
+    const d = document.createElement("div"); d.className = "emote"; d.style.fontSize = ".95rem";
+    d.style.background = "rgba(0,0,0,.6)"; d.style.color = "#fff"; d.style.padding = "6px 10px"; d.style.borderRadius = "10px";
+    d.style.left = "50%"; d.style.top = "25%"; d.style.transform = "translateX(-50%)"; d.textContent = msg;
+    r.appendChild(d); setTimeout(() => d.remove(), 1200);
+  }
+
+  function afterAction() { save(); render(); }
+
+  // ---- mağaza ----
+  function openShop(mode) {
+    const g = document.getElementById("shopGrid"); g.innerHTML = "";
+    document.querySelector("#shopPanel h3").textContent = mode === "eat" ? "🍎 Mama Dolabı" : "🛍️ Mağaza";
+    for (const f in FOODS) {
+      const food = FOODS[f]; const have = S.inv[f] || 0;
+      const d = document.createElement("div"); d.className = "shop-item";
+      if (mode === "eat") {
+        d.innerHTML = `<div class="ic">${f}</div><div class="pr">x${have}</div>`;
+        d.onclick = () => { if ((S.inv[f]||0) > 0) { S.inv[f]--; eat(f); closePanels(); } else flash("Bu yiyecek bitti!"); };
+      } else {
+        d.innerHTML = `<div class="ic">${f}</div><div class="pr">💰${food.c||1}</div>`;
+        d.onclick = () => { const price = food.c||1; if (S.coins >= price) { S.coins -= price; S.inv[f]=(S.inv[f]||0)+1; emote("🛍️"); afterAction(); openShop("buy"); } else flash("Yeterli jeton yok!"); };
+      }
+      g.appendChild(d);
+    }
+    document.getElementById("shopPanel").classList.add("show");
+  }
+  function eat(f) {
+    const food = FOODS[f];
+    S.hunger = clamp(S.hunger + food.h);
+    if (food.happy) S.happy = clamp(S.happy + food.happy);
+    S.clean = clamp(S.clean - 4);
+    bounce(); emote(f); afterAction();
+  }
+
+  function openDress() {
+    const g = document.getElementById("dressGrid"); g.innerHTML = "";
+    for (const h in HATS) {
+      const hat = HATS[h];
+      const owned = h === "yok" || S["hat_"+h];
+      const d = document.createElement("div"); d.className = "shop-item";
+      const label = h === "yok" ? "🚫" : hat.e;
+      d.innerHTML = `<div class="ic">${label}</div><div class="pr">${owned ? (S.hat===h?"✅":"Giy") : "💰"+hat.c}</div>`;
+      d.onclick = () => {
+        if (owned) { S.hat = h; emote("✨"); }
+        else if (S.coins >= hat.c) { S.coins -= hat.c; S["hat_"+h] = true; S.hat = h; emote("🎉"); }
+        else { flash("Yeterli jeton yok!"); return; }
+        afterAction(); openDress();
+      };
+      g.appendChild(d);
+    }
+    document.getElementById("dressPanel").classList.add("show");
+  }
+
+  window.closePanels = () => document.querySelectorAll(".panel").forEach(p => { if (p.id !== "namePanel" || S.name) p.classList.remove("show"); });
+
+  // ---- mini oyun ----
+  let miniRaf, miniState;
+  function startMini() {
+    const area = document.getElementById("miniArea"); area.innerHTML = "";
+    const basket = document.createElement("div"); basket.id = "basket"; basket.textContent = "🧺";
+    basket.style.left = "50%"; area.appendChild(basket);
+    miniState = { score:0, time:20, items:[], spawn:0, bx:0.5, last:0, running:true };
+    document.getElementById("miniScore").textContent = 0;
+    document.getElementById("miniTime").textContent = 20;
+    document.getElementById("miniPanel").classList.add("show");
+
+    const move = clientX => {
+      const r = area.getBoundingClientRect();
+      miniState.bx = Math.max(0.06, Math.min(0.94, (clientX - r.left)/r.width));
+      basket.style.left = (miniState.bx*100) + "%";
+    };
+    area.ontouchmove = e => { e.preventDefault(); move(e.touches[0].clientX); };
+    area.onmousemove = e => move(e.clientX);
+    area.ontouchstart = e => move(e.touches[0].clientX);
+
+    const timer = setInterval(() => {
+      if (!miniState.running) return clearInterval(timer);
+      miniState.time--; document.getElementById("miniTime").textContent = miniState.time;
+      if (miniState.time <= 0) { clearInterval(timer); endMini(); }
+    }, 1000);
+
+    cancelAnimationFrame(miniRaf);
+    miniState.last = performance.now();
+    const step = ts => {
+      if (!miniState.running) return;
+      const dt = Math.min(40, ts - miniState.last); miniState.last = ts;
+      const area = document.getElementById("miniArea"); const r = area.getBoundingClientRect();
+      miniState.spawn += dt;
+      if (miniState.spawn > 650) { miniState.spawn = 0;
+        const el = document.createElement("div"); el.className = "falling";
+        const bad = Math.random() < 0.2;
+        el.textContent = bad ? "🪨" : ["🍓","🍎","🍇","🍒","⭐"][Math.floor(Math.random()*5)];
+        el.dataset.bad = bad ? "1":"0";
+        el.style.left = (5 + Math.random()*85) + "%"; el.style.top = "-10%";
+        el._y = -10; area.appendChild(el); miniState.items.push(el);
+      }
+      miniState.items = miniState.items.filter(el => {
+        el._y += dt * 0.05; el.style.top = el._y + "%";
+        if (el._y > 78) {
+          const elx = parseFloat(el.style.left)/100;
+          if (Math.abs(elx - miniState.bx) < 0.14) {
+            if (el.dataset.bad === "1") { miniState.score = Math.max(0, miniState.score-2); }
+            else miniState.score++;
+            document.getElementById("miniScore").textContent = miniState.score;
+            el.remove(); return false;
+          }
+        }
+        if (el._y > 105) { el.remove(); return false; }
+        return true;
+      });
+      miniRaf = requestAnimationFrame(step);
+    };
+    miniRaf = requestAnimationFrame(step);
+  }
+  function endMini() {
+    miniState.running = false; cancelAnimationFrame(miniRaf);
+    const earned = miniState.score;
+    S.coins += earned; S.happy = clamp(S.happy + 10);
+    document.getElementById("miniPanel").classList.remove("show");
+    flash(`🍓 ${earned} jeton kazandın!`); afterAction();
+  }
+  document.getElementById("miniClose").onclick = endMini;
+
+  // ---- döngü: ihtiyaçlar zamanla azalır ----
+  function tick() {
+    const dec = 0.06;
+    S.hunger = clamp(S.hunger - dec*1.2);
+    S.happy = clamp(S.happy - dec * (S.hunger < 25 ? 2.5 : 1));
+    S.clean = clamp(S.clean - dec*0.7);
+    if (S.sleeping) S.energy = clamp(S.energy + dec*4);
+    else S.energy = clamp(S.energy - dec*0.8);
+    if (S.energy >= 100) { S.sleeping = false; document.getElementById("sleepBtn").querySelector(".nm").textContent = "Uyut"; }
+    S.lastTs = Date.now();
+    render(); save();
+  }
+
+  function barColor(v) { return v > 60 ? "#5fc26a" : v > 30 ? "#ffc04d" : "#f55b5b"; }
+  function setBar(id, v) { const b = document.getElementById(id); b.style.width = v + "%"; b.style.background = barColor(v); }
+
+  function render() {
+    if (!S.name) return;
+    document.getElementById("coins").textContent = S.coins;
+    document.getElementById("petName").textContent = S.name + " " + (HATS[S.hat]?.e || "");
+    const petEl = document.getElementById("pet");
+    petEl.textContent = S.pet;
+    const sad = S.hunger < 25 || S.happy < 25;
+    petEl.classList.toggle("sad", sad);
+    setBar("barHunger", S.hunger); setBar("barHappy", S.happy);
+    setBar("barEnergy", S.energy); setBar("barClean", S.clean);
+    // oda + uyku
+    const room = document.getElementById("room");
+    room.querySelector(".zzz")?.remove();
+    if (S.sleeping) {
+      room.style.background = "linear-gradient(160deg,#2a2a55,#4a3a7a)";
+      const z = document.createElement("div"); z.className = "zzz"; z.textContent = "💤"; room.appendChild(z);
+    } else {
+      room.style.background = "linear-gradient(160deg,#ffd6ec,#c7b8ff)";
+    }
+  }
+
+  load();
+  render();
+  setInterval(tick, 1500);
+  window.addEventListener("beforeunload", save);
+</script>
+</body>
+</html>

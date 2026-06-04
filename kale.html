@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Kristal Kale Savunması 🏰</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Comic Sans MS','Segoe UI',sans-serif; }
+  body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#102a43 0%,#3a5a8c 55%,#7da0c4 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center; padding:8px; overflow-x:hidden; }
+  .home-btn { position:fixed; top:8px; left:10px; z-index:30; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#264; box-shadow:0 4px 12px rgba(0,0,0,.2); text-decoration:none; }
+  h1 { font-size:clamp(1.1rem,4vw,1.7rem); margin:38px 0 6px; text-shadow:0 3px 10px rgba(0,0,0,.4); }
+  .hud { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-bottom:6px; }
+  .hud div { background:rgba(255,255,255,.16); border-radius:11px; padding:6px 11px; font-weight:bold; font-size:.9rem; }
+  canvas { background:#2e7d4f; border-radius:14px; box-shadow:0 8px 24px rgba(0,0,0,.35); width:min(96vw,560px); touch-action:none; }
+  .shop { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:8px; max-width:560px; }
+  .tw { border:2px solid rgba(255,255,255,.3); border-radius:12px; padding:7px 9px; cursor:pointer; background:rgba(255,255,255,.12);
+    text-align:center; min-width:74px; transition:transform .12s; }
+  .tw:active { transform:scale(.93); }
+  .tw.active { border-color:#ffd93d; background:rgba(255,217,61,.25); }
+  .tw.cant { opacity:.45; }
+  .tw .ic { font-size:1.5rem; } .tw .nm { font-size:.7rem; font-weight:bold; } .tw .pr { font-size:.72rem; color:#ffe082; }
+  .controls { display:flex; gap:8px; margin-top:8px; }
+  .btn { border:none; border-radius:13px; padding:11px 22px; font-weight:bold; font-size:1rem; cursor:pointer;
+    background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; box-shadow:0 5px 14px rgba(255,180,60,.4); }
+  .btn.green { background:linear-gradient(135deg,#84d9a1,#4ec98a); color:#053; }
+  .btn:disabled { opacity:.5; }
+  .panel { position:fixed; bottom:0; left:0; right:0; background:rgba(15,30,55,.96); border-radius:18px 18px 0 0;
+    padding:14px; display:none; flex-direction:column; align-items:center; z-index:25; box-shadow:0 -6px 20px rgba(0,0,0,.4); }
+  .panel.show { display:flex; }
+  .panel .row { display:flex; gap:10px; margin-top:8px; }
+  .screen { position:fixed; inset:0; background:rgba(10,25,50,.93); backdrop-filter:blur(6px); display:none;
+    flex-direction:column; align-items:center; justify-content:center; z-index:20; text-align:center; padding:22px; }
+  .screen.show { display:flex; }
+  .screen h2 { font-size:2rem; margin-bottom:10px; } .screen p { font-size:1.1rem; margin:4px 0; }
+  .hint { font-size:.82rem; opacity:.8; margin-top:6px; text-align:center; max-width:540px; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>🏰 Kristal Kale Savunması</h1>
+<div class="hud">
+  <div>💛 Altın: <span id="gold">100</span></div>
+  <div>❤️ Can: <span id="lives">20</span></div>
+  <div>🌊 Dalga: <span id="wave">0</span>/<span id="maxWave">15</span></div>
+  <div>🏆 Rekor: <span id="best">0</span></div>
+</div>
+<canvas id="cv" width="560" height="480"></canvas>
+<div class="shop" id="shop"></div>
+<div class="controls">
+  <button class="btn green" id="startWaveBtn">🌊 Dalgayı Başlat</button>
+  <button class="btn" id="speedBtn">⏩ Hız: 1x</button>
+</div>
+<div class="hint">Kuleyi seç, yola dokunarak yerleştir. Yerleşik kuleye dokun → yükselt/sat. Düşmanların kaleye ulaşmasını engelle!</div>
+
+<!-- Yükseltme paneli -->
+<div class="panel" id="upPanel">
+  <div id="upInfo" style="font-weight:bold"></div>
+  <div class="row">
+    <button class="btn green" id="upgradeBtn">⬆️ Yükselt</button>
+    <button class="btn" id="sellBtn">💰 Sat</button>
+    <button class="btn" style="background:#aaa;color:#222" onclick="closePanel()">✖️ Kapat</button>
+  </div>
+</div>
+
+<div class="screen" id="overScreen">
+  <h2 id="overTitle">Oyun Bitti</h2>
+  <p id="overMsg"></p>
+  <button class="btn" onclick="resetGame()">🔄 Yeniden Başla</button>
+</div>
+
+<script>
+  const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height, GS = 40; // grid size
+  const COLS = W / GS, ROWS = H / GS;
+
+  // Yol (grid hücreleri) - yılan gibi
+  const PATH = [
+    [0,2],[1,2],[2,2],[3,2],[3,3],[3,4],[3,5],[4,5],[5,5],[6,5],[7,5],[8,5],[8,4],[8,3],[8,2],[8,1],[9,1],[10,1],[11,1],
+    [11,2],[11,3],[11,4],[11,5],[11,6],[11,7],[10,7],[9,7],[8,7],[7,7],[6,7],[5,7],[4,7],[3,7],[2,7],[1,7],[1,8],[1,9],[1,10],[2,10],[3,10],[4,10],[5,10],[6,10],[7,10],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10]
+  ];
+  const pathSet = new Set(PATH.map(p => p[0]+","+p[1]));
+  // piksel yol (merkez noktaları)
+  const wp = PATH.map(([c,r]) => ({ x: c*GS + GS/2, y: r*GS + GS/2 }));
+
+  const TOWERS = {
+    ok:    { name:"Okçu",  ic:"🏹", cost:40,  range:110, dmg:8,  rate:45,  color:"#8d6e63", bullet:"#fff" },
+    buz:   { name:"Buz",   ic:"❄️", cost:60,  range:95,  dmg:4,  rate:55,  slow:0.5, color:"#4fc3f7", bullet:"#b3e5fc" },
+    ates:  { name:"Ateş",  ic:"🔥", cost:90,  range:85,  dmg:22, rate:75,  splash:55, color:"#ef5350", bullet:"#ff9800" },
+    sihir: { name:"Sihir", ic:"✨", cost:130, range:140, dmg:30, rate:60,  color:"#ab47bc", bullet:"#e1bee7" }
+  };
+
+  const WAVES = 15;
+  let gold, lives, wave, running, speed, towers, enemies, bullets, selType, spawnQueue, spawnT, best, gameOver, selTower;
+
+  try { best = +localStorage.getItem("kaleBest") || 0; } catch(e) { best = 0; }
+  document.getElementById("best").textContent = best;
+  document.getElementById("maxWave").textContent = WAVES;
+
+  function resetGame() {
+    gold = 120; lives = 20; wave = 0; running = false; speed = 1;
+    towers = []; enemies = []; bullets = []; selType = null; selTower = null;
+    spawnQueue = []; spawnT = 0; gameOver = false;
+    document.getElementById("overScreen").classList.remove("show");
+    closePanel();
+    updateHud(); buildShop();
+    document.getElementById("startWaveBtn").disabled = false;
+  }
+
+  function buildShop() {
+    const sh = document.getElementById("shop"); sh.innerHTML = "";
+    for (const k in TOWERS) {
+      const t = TOWERS[k];
+      const d = document.createElement("div");
+      d.className = "tw" + (gold < t.cost ? " cant" : "") + (selType === k ? " active" : "");
+      d.innerHTML = `<div class="ic">${t.ic}</div><div class="nm">${t.name}</div><div class="pr">💛${t.cost}</div>`;
+      d.onclick = () => { if (gold >= t.cost) { selType = (selType === k ? null : k); buildShop(); } };
+      sh.appendChild(d);
+    }
+  }
+
+  function updateHud() {
+    document.getElementById("gold").textContent = gold;
+    document.getElementById("lives").textContent = lives;
+    document.getElementById("wave").textContent = wave;
+  }
+
+  // ---- dalga oluşturma ----
+  function startWave() {
+    if (running || gameOver) return;
+    if (wave >= WAVES) return;
+    wave++; running = true; updateHud();
+    document.getElementById("startWaveBtn").disabled = true;
+    const count = 6 + wave * 2;
+    const hp = 18 + wave * 14;
+    const sp = 0.6 + wave * 0.04;
+    spawnQueue = [];
+    for (let i = 0; i < count; i++) {
+      let type = "normal", mult = 1, em = "👾";
+      if (wave >= 4 && i % 5 === 0) { type = "fast"; mult = 0.6; em = "🦇"; }
+      if (wave >= 6 && i % 7 === 0) { type = "tank"; mult = 2.6; em = "🐲"; }
+      if (wave === WAVES && i === count-1) { type = "boss"; mult = 12; em = "👹"; }
+      spawnQueue.push({ hp: hp*mult, maxHp: hp*mult, sp: type==="fast" ? sp*1.7 : type==="tank"||type==="boss" ? sp*0.6 : sp, em, reward: Math.ceil(4 + wave*0.8*mult) });
+    }
+    spawnT = 0;
+  }
+
+  // ---- ana döngü ----
+  let lastTs = 0;
+  function loop(ts) {
+    if (!lastTs) lastTs = ts;
+    let dt = (ts - lastTs); lastTs = ts;
+    for (let s = 0; s < speed; s++) step(Math.min(40, dt));
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function step(dt) {
+    if (gameOver) return;
+    // spawn
+    if (running && spawnQueue.length) {
+      spawnT += dt;
+      if (spawnT > 600) { spawnT = 0; const e = spawnQueue.shift(); enemies.push({ ...e, t: 0, slow: 0, slowT: 0 }); }
+    }
+    // düşman hareketi
+    enemies.forEach(e => {
+      let spd = e.sp * (e.slowT > 0 ? e.slow : 1);
+      e.slowT = Math.max(0, e.slowT - dt);
+      e.t += spd * dt * 0.06;
+      const seg = Math.floor(e.t);
+      if (seg >= wp.length - 1) { e.dead = true; e.reached = true; }
+    });
+    enemies.filter(e => e.reached).forEach(() => { lives--; });
+    enemies = enemies.filter(e => !e.reached || (e.reached && false));
+    if (lives <= 0 && !gameOver) return endGame(false);
+    enemies = enemies.filter(e => !e.dead || e._killing);
+
+    // kule ateşi
+    towers.forEach(t => {
+      t.cool = (t.cool || 0) - dt;
+      if (t.cool > 0) return;
+      const def = TOWERS[t.type];
+      const range = def.range * (1 + (t.lvl-1)*0.12);
+      let target = null, best = Infinity;
+      enemies.forEach(e => {
+        if (e.dead) return;
+        const p = enemyPos(e);
+        const d = Math.hypot(p.x - t.x, p.y - t.y);
+        if (d <= range && e.t > best === false) {} // pick furthest along
+        if (d <= range && e.t < best) { /* keep */ }
+      });
+      // en ileri düşmanı hedefle
+      let chosen = null, far = -1;
+      enemies.forEach(e => { if (e.dead) return; const p = enemyPos(e); const d = Math.hypot(p.x-t.x,p.y-t.y);
+        if (d <= range && e.t > far) { far = e.t; chosen = e; } });
+      if (chosen) {
+        t.cool = def.rate * (1 - (t.lvl-1)*0.04);
+        const dmg = def.dmg * (1 + (t.lvl-1)*0.35);
+        bullets.push({ x: t.x, y: t.y, target: chosen, dmg, def, color: def.bullet });
+        t.flash = 6;
+      }
+    });
+    towers.forEach(t => t.flash = Math.max(0, (t.flash||0) - 1));
+
+    // mermiler
+    bullets.forEach(b => {
+      if (b.target.dead) { b.hit = true; return; }
+      const p = enemyPos(b.target);
+      const dx = p.x - b.x, dy = p.y - b.y, d = Math.hypot(dx, dy);
+      const v = 7;
+      if (d < v) {
+        b.hit = true;
+        applyHit(b.target, b);
+      } else { b.x += dx/d*v; b.y += dy/d*v; }
+    });
+    bullets = bullets.filter(b => !b.hit);
+    enemies = enemies.filter(e => !e.dead);
+
+    // dalga bitti mi
+    if (running && spawnQueue.length === 0 && enemies.length === 0) {
+      running = false;
+      gold += 30 + wave * 5; updateHud(); buildShop();
+      if (wave >= WAVES) return endGame(true);
+      document.getElementById("startWaveBtn").disabled = false;
+    }
+  }
+
+  function applyHit(e, b) {
+    const def = b.def;
+    e.hp -= b.dmg;
+    if (def.slow) { e.slow = def.slow; e.slowT = 1500; }
+    if (def.splash) {
+      const p = enemyPos(e);
+      enemies.forEach(o => { if (o !== e && !o.dead) { const op = enemyPos(o);
+        if (Math.hypot(op.x-p.x, op.y-p.y) < def.splash) o.hp -= b.dmg*0.5; } });
+    }
+    enemies.forEach(o => { if (o.hp <= 0 && !o.dead) { o.dead = true; gold += o.reward; updateHud(); buildShop(); } });
+  }
+
+  function enemyPos(e) {
+    const seg = Math.floor(e.t), f = e.t - seg;
+    const a = wp[Math.min(seg, wp.length-1)], bb = wp[Math.min(seg+1, wp.length-1)];
+    return { x: a.x + (bb.x-a.x)*f, y: a.y + (bb.y-a.y)*f };
+  }
+
+  // ---- çizim ----
+  function draw() {
+    ctx.clearRect(0,0,W,H);
+    // çim deseni
+    ctx.fillStyle = "#2e7d4f"; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = "#338a57";
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) if ((r+c)%2===0) ctx.fillRect(c*GS,r*GS,GS,GS);
+    // yol
+    ctx.fillStyle = "#c9a36a";
+    PATH.forEach(([c,r]) => ctx.fillRect(c*GS, r*GS, GS, GS));
+    // kale (son)
+    const end = wp[wp.length-1];
+    ctx.font = "30px serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText("🏰", end.x, end.y);
+    // başlangıç
+    ctx.fillText("🌀", wp[0].x, wp[0].y);
+
+    // menzil önizleme
+    if (selType) {
+      ctx.strokeStyle = "rgba(255,255,255,.4)"; ctx.fillStyle = "rgba(255,255,255,.08)";
+    }
+    // kuleler
+    towers.forEach(t => {
+      const def = TOWERS[t.type];
+      if (selTower === t) {
+        const range = def.range * (1 + (t.lvl-1)*0.12);
+        ctx.beginPath(); ctx.arc(t.x, t.y, range, 0, 7);
+        ctx.fillStyle = "rgba(255,255,255,.12)"; ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.stroke();
+      }
+      ctx.font = (t.flash ? "30px" : "26px") + " serif";
+      ctx.fillText(def.ic, t.x, t.y);
+      // seviye noktaları
+      ctx.font = "9px sans-serif"; ctx.fillStyle = "#fff";
+      ctx.fillText("★".repeat(t.lvl), t.x, t.y + 16);
+    });
+    // düşmanlar
+    enemies.forEach(e => {
+      const p = enemyPos(e);
+      ctx.font = "24px serif"; ctx.fillText(e.em, p.x, p.y);
+      // can barı
+      const w = 26, hp = Math.max(0, e.hp/e.maxHp);
+      ctx.fillStyle = "#000"; ctx.fillRect(p.x-w/2, p.y-20, w, 4);
+      ctx.fillStyle = hp > .5 ? "#4caf50" : hp > .25 ? "#ffc107" : "#f44336";
+      ctx.fillRect(p.x-w/2, p.y-20, w*hp, 4);
+    });
+    // mermiler
+    bullets.forEach(b => { ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, 7); ctx.fill(); });
+  }
+
+  // ---- yerleştirme / etkileşim ----
+  function canvasXY(clientX, clientY) {
+    const r = cv.getBoundingClientRect();
+    return { x: (clientX-r.left)*(W/r.width), y: (clientY-r.top)*(H/r.height) };
+  }
+  function handleTap(clientX, clientY) {
+    const { x, y } = canvasXY(clientX, clientY);
+    const c = Math.floor(x/GS), r = Math.floor(y/GS);
+    // mevcut kuleye dokunma?
+    const hit = towers.find(t => Math.abs(t.x - x) < GS/2 && Math.abs(t.y - y) < GS/2);
+    if (hit && !selType) { openPanel(hit); return; }
+    // yerleştirme
+    if (selType) {
+      if (pathSet.has(c+","+r)) return;
+      if (towers.some(t => Math.floor(t.x/GS)===c && Math.floor(t.y/GS)===r)) return;
+      if (c<0||r<0||c>=COLS||r>=ROWS) return;
+      const def = TOWERS[selType];
+      if (gold < def.cost) return;
+      gold -= def.cost;
+      towers.push({ type:selType, x:c*GS+GS/2, y:r*GS+GS/2, lvl:1, cool:0, spent:def.cost });
+      selType = null; updateHud(); buildShop();
+    }
+  }
+  cv.addEventListener("click", e => handleTap(e.clientX, e.clientY));
+
+  function openPanel(t) {
+    selTower = t; const def = TOWERS[t.type];
+    const upCost = Math.ceil(def.cost * 0.8 * t.lvl);
+    const maxed = t.lvl >= 4;
+    document.getElementById("upInfo").innerHTML =
+      `${def.ic} ${def.name} <b>Sv.${t.lvl}</b> — Hasar: ${Math.round(def.dmg*(1+(t.lvl-1)*0.35))}`;
+    const ub = document.getElementById("upgradeBtn");
+    ub.textContent = maxed ? "✅ Maks Seviye" : `⬆️ Yükselt 💛${upCost}`;
+    ub.disabled = maxed || gold < upCost;
+    ub.onclick = () => { if (!maxed && gold >= upCost) { gold -= upCost; t.lvl++; t.spent += upCost; updateHud(); buildShop(); openPanel(t); } };
+    document.getElementById("sellBtn").textContent = `💰 Sat 💛${Math.ceil(t.spent*0.6)}`;
+    document.getElementById("sellBtn").onclick = () => {
+      gold += Math.ceil(t.spent*0.6); towers = towers.filter(x => x !== t); updateHud(); buildShop(); closePanel();
+    };
+    document.getElementById("upPanel").classList.add("show");
+  }
+  function closePanel() { selTower = null; document.getElementById("upPanel").classList.remove("show"); }
+  window.closePanel = closePanel;
+
+  document.getElementById("startWaveBtn").onclick = startWave;
+  document.getElementById("speedBtn").onclick = function() {
+    speed = speed === 1 ? 2 : speed === 2 ? 3 : 1;
+    this.textContent = "⏩ Hız: " + speed + "x";
+  };
+
+  function endGame(won) {
+    gameOver = true; running = false;
+    if (wave > best) { best = wave; try { localStorage.setItem("kaleBest", best); } catch(e) {} document.getElementById("best").textContent = best; }
+    document.getElementById("overTitle").textContent = won ? "🏆 Kale Kurtuldu!" : "💔 Kale Düştü!";
+    document.getElementById("overMsg").textContent = won
+      ? "Tüm dalgaları yendin, sen gerçek bir kraliçesin Eylül! 👑"
+      : `${wave}. dalgaya kadar dayandın. Tekrar dene!`;
+    document.getElementById("overScreen").classList.add("show");
+  }
+
+  resetGame();
+  requestAnimationFrame(loop);
+</script>
+</body>
+</html>
