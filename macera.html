@@ -185,6 +185,7 @@ XXXXXX...XXXXXX...XXX...XXXXXX...XXXXXXXXXXX`
     document.getElementById("lvlNo").textContent = i+1;
     document.getElementById("gemsTot").textContent = level.gems.length;
     updateHud();
+    lastT = 0; acc = 0;
     if (!raf) raf = requestAnimationFrame(loop);
   }
 
@@ -195,8 +196,12 @@ XXXXXX...XXXXXX...XXX...XXXXXX...XXXXXXXXXXX`
 
   const GRAV = 0.7, MOVE = 0.9, MAXVX = 5.5, JUMP = 14, FRICTION = 0.8;
 
-  function loop() {
-    update();
+  // fizik 60Hz sabit adımda — 120Hz ekranlarda da aynı hız
+  let lastT = 0, acc = 0;
+  function loop(ts) {
+    if (!lastT) lastT = ts;
+    acc += Math.min(100, ts - lastT); lastT = ts;
+    while (acc >= 16.7) { acc -= 16.7; update(); }
     draw();
     raf = requestAnimationFrame(loop);
   }

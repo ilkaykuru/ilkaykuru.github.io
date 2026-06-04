@@ -59,27 +59,45 @@
 
   for (let i=0;i<40;i++) stars.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.8+0.5 });
 
+  let lastT = 0, acc = 0;
   function reset() {
     ry = H/2; vy = 0; pillars = []; score = 0; frames = 0;
+    lastT = 0; acc = 0;
     document.getElementById("score").textContent = 0;
     waiting = true; running = true;
     document.getElementById("over").classList.remove("show");
     requestAnimationFrame(loop);
   }
 
-  function loop() {
-    if (!running) return;
+  // fizik 60Hz sabit adımda — ekran 120Hz olsa bile hız değişmez
+  function stepPhysics() {
     frames++;
-
-    if (!waiting) {
-      vy += G; ry += vy;
-      if (frames % 95 === 0) {
-        const top = 60 + Math.random() * (H - GAP - 180);
-        pillars.push({ x: W + 20, top, passed: false });
-      }
-      pillars.forEach(p => p.x -= SPEED + Math.min(2, score*0.04));
-      pillars = pillars.filter(p => p.x > -PW);
+    if (waiting) return;
+    vy += G; ry += vy;
+    if (frames % 95 === 0) {
+      const top = 60 + Math.random() * (H - GAP - 180);
+      pillars.push({ x: W + 20, top, passed: false });
     }
+    pillars.forEach(p => p.x -= SPEED + Math.min(2, score*0.04));
+    pillars = pillars.filter(p => p.x > -PW);
+    // skor + çarpışma
+    pillars.forEach(p => {
+      if (!p.passed && p.x + PW < 80 - 18) {
+        p.passed = true; score++;
+        document.getElementById("score").textContent = score;
+      }
+      const hitX = 80 + 20 > p.x && 80 - 20 < p.x + PW;
+      if (hitX && (ry - 16 < p.top || ry + 16 > p.top + GAP)) endGame();
+    });
+    if (ry > H - 14 || ry < 14) endGame();
+  }
+
+  function loop(ts) {
+    if (!running) return;
+    if (!lastT) lastT = ts;
+    acc += Math.min(100, ts - lastT); lastT = ts;
+    while (acc >= 16.7 && running) { acc -= 16.7; stepPhysics(); }
+    if (!running) return;
 
     // çiz
     ctx.clearRect(0,0,W,H);
@@ -108,17 +126,6 @@
       ctx.font = "22px 'Comic Sans MS', sans-serif";
       ctx.textAlign = "center"; ctx.fillStyle = "#ffd93d";
       ctx.fillText("Başlamak için dokun! 👆", W/2, H/2 - 90);
-    } else {
-      // skor & çarpışma
-      pillars.forEach(p => {
-        if (!p.passed && p.x + PW < 80 - 18) {
-          p.passed = true; score++;
-          document.getElementById("score").textContent = score;
-        }
-        const hitX = 80 + 20 > p.x && 80 - 20 < p.x + PW;
-        if (hitX && (ry - 16 < p.top || ry + 16 > p.top + GAP)) return endGame();
-      });
-      if (ry > H - 14 || ry < 14) return endGame();
     }
 
     requestAnimationFrame(loop);
