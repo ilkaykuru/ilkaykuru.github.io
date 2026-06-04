@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mangala 🪨</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#2b1055">
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#3e2723 0%,#5d4037 60%,#8d6e63 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center; padding:8px; }
+  .home-btn { position:fixed; top:8px; left:10px; z-index:30; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#5d4037; box-shadow:0 4px 12px rgba(0,0,0,.3); text-decoration:none; }
+  h1 { font-size:clamp(1.2rem,4.5vw,1.7rem); margin:40px 0 6px; }
+  .bar { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-bottom:6px; align-items:center; }
+  .bar select, .bar button { border:none; border-radius:11px; padding:9px 13px; font-weight:bold; font-size:.88rem;
+    cursor:pointer; background:rgba(255,255,255,.18); color:#fff; font-family:inherit; }
+  .bar select option { color:#222; }
+  .bar button.gold { background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  #turnBar { font-weight:bold; font-size:1rem; min-height:1.4em; margin:4px 0 8px; text-align:center; }
+  #boardWrap { background:#4e342e; border-radius:24px; padding:14px; box-shadow:0 12px 32px rgba(0,0,0,.5); }
+  .mid { display:grid; grid-template-columns:var(--ts) repeat(6, var(--ps)) var(--ts); gap:8px; align-items:center; }
+  .pit, .store {
+    background:radial-gradient(circle at 40% 30%, #6d4c41, #3e2723);
+    border-radius:50%; box-shadow:inset 0 4px 12px rgba(0,0,0,.6);
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    cursor:pointer; position:relative; color:#ffe0b2; font-weight:bold;
+  }
+  .pit { width:var(--ps); height:var(--ps); font-size:calc(var(--ps)*.34); }
+  .store { width:var(--ts); height:calc(var(--ps)*2 + 16px); border-radius:28px; font-size:calc(var(--ts)*.4); grid-row:span 2; }
+  .pit .stones { position:absolute; inset:0; pointer-events:none; }
+  .pit .stones i { position:absolute; width:18%; height:18%; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #efebe9, #a1887f); box-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .pit.mine { outline:3px solid rgba(255,217,61,.55); }
+  .pit.dis { opacity:.55; cursor:default; outline:none; }
+  .pit.lastSown { box-shadow:inset 0 4px 12px rgba(0,0,0,.6), 0 0 14px 3px rgba(255,217,61,.8); }
+  .lbl { font-size:.72rem; opacity:.75; text-align:center; margin:4px 0; font-weight:bold; }
+  .screen { position:fixed; inset:0; background:rgba(30,15,10,.94); backdrop-filter:blur(6px); display:none;
+    flex-direction:column; align-items:center; justify-content:center; z-index:25; text-align:center; padding:22px; }
+  .screen.show { display:flex; }
+  .screen h2 { font-size:2rem; margin-bottom:10px; }
+  .screen p { font-size:1.1rem; margin:4px 0; }
+  .screen button { margin-top:14px; border:none; border-radius:14px; padding:13px 30px; font-weight:bold; font-size:1.1rem;
+    cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  .hint { font-size:.76rem; opacity:.8; margin-top:8px; text-align:center; max-width:480px; line-height:1.5; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>🪨 Mangala</h1>
+<div class="bar">
+  <select id="modeSel">
+    <option value="2p" selected>👨‍👧 2 Kişi</option>
+    <option value="ai">🤖 Bilgisayara Karşı</option>
+  </select>
+  <button class="gold" id="newBtn">🆕 Yeni</button>
+</div>
+<div id="turnBar"></div>
+<div class="lbl" id="topLbl">⬆️ ÜST OYUNCU (sağdan sola)</div>
+<div id="boardWrap"></div>
+<div class="lbl" id="botLbl">⬇️ ALT OYUNCU (soldan sağa)</div>
+<div class="hint">Kendi tarafındaki bir kuyuya dokun. Taşlar saat yönünün tersine dağılır. Son taş hazinene düşerse <b>tekrar oyna</b>! Son taş rakip kuyusunu ÇİFT yaparsa o taşları kaparsın. 48 taşın çoğunu toplayan kazanır!</div>
+
+<div class="screen" id="overScreen">
+  <h2 id="overTitle"></h2>
+  <p id="overMsg"></p>
+  <button onclick="newGame()">🆕 Tekrar</button>
+</div>
+
+<script>
+/* ============ MANGALA ÇEKİRDEĞİ (Türk kuralları) ============
+   Kuyular: 0-5 alt oyuncu (A), 6 A hazinesi, 7-12 üst oyuncu (B), 13 B hazinesi.
+   Sıra yönü: 0→1→...→5→6(A hazine)→7→...→12→13(B hazine)→0...
+   Kurallar:
+   - Kuyudaki taşlar alınır; 1 taşsa komşuya taşınır, >1 ise biri kuyuda bırakılır, kalanlar dağıtılır.
+   - Rakibin hazinesi atlanır.
+   - Son taş kendi hazinesine düşerse: tekrar oyna.
+   - Son taş RAKİP kuyusuna düşüp sayıyı ÇİFT yaparsa: o kuyu kapılır.
+   - Son taş KENDİ BOŞ kuyusuna düşerse ve karşısındaki rakip kuyusu doluysa: ikisi de kapılır.
+   - Bir tarafın kuyuları boşalırsa: kalan taşlar sahibinin hazinesine, oyun biter. */
+const MG = (() => {
+  function newBoard() {
+    const b = new Array(14).fill(4);
+    b[6] = 0; b[13] = 0;
+    return b;
+  }
+  const sideOf = i => (i >= 0 && i <= 5) ? 0 : (i >= 7 && i <= 12) ? 1 : -1;
+  const storeOf = pl => pl === 0 ? 6 : 13;
+  const oppStore = pl => pl === 0 ? 13 : 6;
+  const oppositeOf = i => 12 - i; // 0↔12, 1↔11, ... 5↔7
+
+  // hamle uygula; { extra, captured } döner. b yerinde değişir.
+  function applyMove(b, pl, pit) {
+    let stones = b[pit];
+    if (stones === 0 || sideOf(pit) !== pl) return null;
+    let pos = pit;
+    if (stones === 1) {
+      b[pit] = 0;
+    } else {
+      b[pit] = 1;       // biri kuyuda kalır
+      stones -= 1;
+    }
+    while (stones > 0) {
+      pos = (pos + 1) % 14;
+      if (pos === oppStore(pl)) continue; // rakip hazinesi atlanır
+      b[pos]++; stones--;
+    }
+    let extra = false, captured = 0;
+    if (pos === storeOf(pl)) {
+      extra = true;
+    } else if (sideOf(pos) === 1 - pl && b[pos] % 2 === 0) {
+      captured += b[pos];
+      b[storeOf(pl)] += b[pos];
+      b[pos] = 0;
+    } else if (sideOf(pos) === pl && b[pos] === 1) {
+      const opp = oppositeOf(pos);
+      if (b[opp] > 0) {
+        captured += b[opp] + 1;
+        b[storeOf(pl)] += b[opp] + 1;
+        b[opp] = 0; b[pos] = 0;
+      }
+    }
+    // taraf boşaldı mı? kalan taşlar sahibine
+    const aEmpty = [0,1,2,3,4,5].every(i => b[i] === 0);
+    const bEmpty = [7,8,9,10,11,12].every(i => b[i] === 0);
+    let finished = false;
+    if (aEmpty || bEmpty) {
+      for (let i = 0; i <= 5; i++) { b[6] += b[i]; b[i] = 0; }
+      for (let i = 7; i <= 12; i++) { b[13] += b[i]; b[i] = 0; }
+      finished = true;
+    }
+    return { extra: extra && !finished, captured, finished, last: pos };
+  }
+
+  function legalMoves(b, pl) {
+    const out = [];
+    const lo = pl === 0 ? 0 : 7, hi = pl === 0 ? 5 : 12;
+    for (let i = lo; i <= hi; i++) if (b[i] > 0) out.push(i);
+    return out;
+  }
+
+  // basit AI: 2 katmanlı açgözlü — kazanç + tekrar hamle değerli
+  function aiMove(b, pl) {
+    const moves = legalMoves(b, pl);
+    let best = null, bestV = -Infinity;
+    for (const m of moves) {
+      const nb = b.slice();
+      const r = applyMove(nb, pl, m);
+      let v = (nb[storeOf(pl)] - b[storeOf(pl)]) * 10;
+      if (r.extra) v += 18;
+      if (r.finished) v += (nb[storeOf(pl)] > 24 ? 200 : -200);
+      // rakibin en iyi cevabını düş
+      if (!r.extra && !r.finished) {
+        let worst = 0;
+        for (const om of legalMoves(nb, 1-pl)) {
+          const ob = nb.slice();
+          const orr = applyMove(ob, 1-pl, om);
+          const gain = ob[storeOf(1-pl)] - nb[storeOf(1-pl)];
+          let ov = gain * 10 + (orr.extra ? 14 : 0);
+          worst = Math.max(worst, ov);
+        }
+        v -= worst * 0.8;
+      }
+      v += Math.random() * 2;
+      if (v > bestV) { bestV = v; best = m; }
+    }
+    return best;
+  }
+
+  return { newBoard, applyMove, legalMoves, aiMove, sideOf, storeOf };
+})();
+
+/* ============ ARAYÜZ ============ */
+let B, turn, mode = '2p', over = false, busy = false, lastSown = -1;
+const wrap = document.getElementById('boardWrap');
+
+function sizeBoard() {
+  const ps = Math.floor(Math.min((window.innerWidth - 160) / 6, 78));
+  document.documentElement.style.setProperty('--ps', Math.max(46, ps) + 'px');
+  document.documentElement.style.setProperty('--ts', Math.max(56, Math.floor(ps*1.1)) + 'px');
+}
+
+function newGame() {
+  B = MG.newBoard();
+  turn = 0; over = false; busy = false; lastSown = -1;
+  mode = document.getElementById('modeSel').value;
+  document.getElementById('overScreen').classList.remove('show');
+  document.getElementById('topLbl').textContent = mode === 'ai' ? '🤖 BİLGİSAYAR' : '⬆️ ÜST OYUNCU';
+  render(); setBar();
+}
+window.newGame = newGame;
+
+function stonesHtml(n) {
+  let h = '<div class="stones">';
+  const N = Math.min(n, 12);
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 + 0.6;
+    const rr = N === 1 ? 0 : 26;
+    h += `<i style="left:${41 + Math.cos(a)*rr}%;top:${41 + Math.sin(a)*rr}%"></i>`;
+  }
+  return h + '</div>';
+}
+
+function render() {
+  wrap.innerHTML = '';
+  const mid = document.createElement('div');
+  mid.className = 'mid';
+  // sol: B hazinesi (13) — üst oyuncunun hazinesi solda
+  const storeB = document.createElement('div');
+  storeB.className = 'store';
+  storeB.innerHTML = `<span>${B[13]}</span><small style="font-size:.55em;opacity:.7">${mode==='ai'?'🤖':'ÜST'}</small>`;
+  mid.appendChild(storeB);
+  // ortadaki 2 sıra: üst (12..7), alt (0..5)
+  const cells = [];
+  for (let i = 12; i >= 7; i--) cells.push(i);
+  for (let i = 0; i <= 5; i++) cells.push(i);
+  cells.forEach((i, idx) => {
+    const d = document.createElement('div');
+    d.className = 'pit';
+    const isTurnSide = MG.sideOf(i) === turn;
+    const canTap = !over && !busy && isTurnSide && B[i] > 0 && !(mode === 'ai' && turn === 1);
+    if (canTap) d.classList.add('mine'); else if (B[i] === 0 || !isTurnSide) d.classList.add('dis');
+    if (i === lastSown) d.classList.add('lastSown');
+    d.innerHTML = `<span style="z-index:2">${B[i]}</span>` + stonesHtml(B[i]);
+    d.onclick = () => tapPit(i);
+    mid.appendChild(d);
+    if (idx === 5) {
+      // sağ: A hazinesi (6)
+      const storeA = document.createElement('div');
+      storeA.className = 'store';
+      storeA.innerHTML = `<span>${B[6]}</span><small style="font-size:.55em;opacity:.7">ALT</small>`;
+      mid.appendChild(storeA);
+    }
+  });
+  wrap.appendChild(mid);
+}
+
+function setBar(msg) {
+  const tb = document.getElementById('turnBar');
+  if (msg) { tb.textContent = msg; return; }
+  if (mode === 'ai') tb.textContent = turn === 0 ? '🟡 Senin sıran! (alt taraf)' : '🤖 Bilgisayar düşünüyor…';
+  else tb.textContent = turn === 0 ? '⬇️ Alt oyuncunun sırası' : '⬆️ Üst oyuncunun sırası';
+}
+
+function tapPit(i) {
+  if (over || busy) return;
+  if (MG.sideOf(i) !== turn || B[i] === 0) return;
+  if (mode === 'ai' && turn === 1) return;
+  doMove(i);
+}
+
+function doMove(i) {
+  const r = MG.applyMove(B, turn, i);
+  if (!r) return;
+  lastSown = r.last;
+  render();
+  if (r.captured > 0) setBar('💥 ' + r.captured + ' taş kapıldı!');
+  if (r.finished) { finish(); return; }
+  if (r.extra) {
+    setBar((mode==='ai'&&turn===1?'🤖 ':'🎁 ') + 'Son taş hazineye — tekrar oyna!');
+    if (mode === 'ai' && turn === 1) scheduleAI();
+    return;
+  }
+  turn = 1 - turn;
+  setTimeout(() => { setBar(); render(); }, r.captured ? 900 : 250);
+  if (mode === 'ai' && turn === 1) scheduleAI();
+}
+
+function scheduleAI() {
+  busy = true;
+  setTimeout(() => {
+    busy = false;
+    const m = MG.aiMove(B, 1);
+    if (m == null) { finish(); return; }
+    doMove(m);
+  }, 950 + Math.random()*600);
+}
+
+function finish() {
+  over = true;
+  const a = B[6], b = B[13];
+  let title;
+  if (a === b) title = '🤝 Berabere! (' + a + ' - ' + b + ')';
+  else if (mode === 'ai') title = a > b ? '🏆 Kazandın! ' + a + ' - ' + b : '🤖 Bilgisayar kazandı ' + b + ' - ' + a;
+  else title = a > b ? '⬇️ Alt oyuncu kazandı! ' + a + ' - ' + b : '⬆️ Üst oyuncu kazandı! ' + b + ' - ' + a;
+  document.getElementById('overTitle').textContent = title;
+  document.getElementById('overMsg').textContent = 'Toplam 48 taşın ' + Math.max(a,b) + " tanesi kazananın hazinesinde!";
+  setTimeout(() => document.getElementById('overScreen').classList.add('show'), 800);
+}
+
+document.getElementById('newBtn').onclick = newGame;
+document.getElementById('modeSel').onchange = newGame;
+window.addEventListener('resize', () => { sizeBoard(); if (B) render(); });
+sizeBoard();
+newGame();
+
+if (typeof module !== 'undefined') module.exports = MG;
+</script>
+<script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function(){}); }
+</script>
+</body>
+</html>

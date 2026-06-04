@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Profilim 👤</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#2b1055">
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#2b1055 0%,#7597de 60%,#f7a8d8 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center; padding:8px 8px 30px; }
+  .home-btn { position:fixed; top:8px; left:10px; z-index:30; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#5b3a8c; box-shadow:0 4px 12px rgba(0,0,0,.3); text-decoration:none; }
+  h1 { font-size:clamp(1.3rem,5vw,1.9rem); margin:42px 0 4px; text-shadow:0 3px 10px rgba(0,0,0,.4); }
+  .hero { width:min(94vw,560px); background:rgba(255,255,255,.15); border-radius:20px; padding:16px; margin-top:8px;
+    display:flex; align-items:center; gap:14px; }
+  .hero .avatar { font-size:3.4rem; }
+  .hero .hinfo { flex:1; }
+  .hero .hinfo b { font-size:1.2rem; }
+  .hero .hinfo span { display:block; font-size:.82rem; opacity:.85; margin-top:2px; }
+  h2 { font-size:1rem; margin:18px 0 8px; opacity:.95; width:min(94vw,560px); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; width:min(94vw,560px); }
+  .stat { background:rgba(255,255,255,.14); border-radius:14px; padding:11px 12px; }
+  .stat .ic { font-size:1.4rem; }
+  .stat .nm { font-size:.74rem; opacity:.8; font-weight:bold; margin-top:2px; }
+  .stat .val { font-size:1.15rem; font-weight:bold; }
+  .stat.empty { opacity:.45; }
+  .kr-box { width:min(94vw,560px); background:rgba(255,255,255,.14); border-radius:16px; padding:14px; }
+  .kr-box .row { display:flex; justify-content:space-between; font-size:.88rem; font-weight:bold; margin:5px 0; }
+  .pbar { height:9px; background:rgba(0,0,0,.3); border-radius:5px; overflow:hidden; margin-bottom:6px; }
+  .pbar div { height:100%; background:linear-gradient(90deg,#ffd93d,#ff9a3d); }
+  .note { font-size:.75rem; opacity:.75; margin-top:14px; text-align:center; max-width:480px; line-height:1.5; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>👤 Eylül'ün Profili</h1>
+
+<div class="hero">
+  <span class="avatar">🦄</span>
+  <div class="hinfo">
+    <b id="heroTitle">Oyun Kahramanı</b>
+    <span id="heroSub">İstatistikler yükleniyor...</span>
+  </div>
+</div>
+
+<h2>🎮 Oyun Rekorları</h2>
+<div class="grid" id="gameGrid"></div>
+
+<h2>🇰🇷 Korece İlerlemesi</h2>
+<div class="kr-box" id="krBox"></div>
+
+<h2>🏅 Koleksiyon</h2>
+<div class="grid" id="collGrid"></div>
+
+<div class="note">Bu sayfa bu cihazdaki kayıtları okur. Korece ilerlemeni başka cihaza taşımak için Korece Dünyası → 💾 Kayıt & Yedek bölümünü kullan.</div>
+
+<script>
+function num(key) { try { return +localStorage.getItem(key) || 0; } catch(e) { return 0; } }
+function obj(key) { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch(e) { return {}; } }
+function cnt(o) { return Object.keys(o).filter(k => o[k]).length; }
+
+const GAMES = [
+  { ic:"🐍", nm:"Uzay Yılanı · rekor", val:() => num("yilanBest"), suf:" puan" },
+  { ic:"🌠", nm:"Yıldız Yakalama · rekor", val:() => num("yildizBest"), suf:" puan" },
+  { ic:"🚀", nm:"Roket Kaçışı · rekor", val:() => num("roketBest"), suf:" puan" },
+  { ic:"🧚", nm:"Peri Melodisi · rekor", val:() => num("periBest"), suf:". seviye" },
+  { ic:"🏰", nm:"Kristal Kale · en iyi dalga", val:() => num("kaleBest"), suf:". dalga" },
+  { ic:"🟦", nm:"Blok Yağmuru · rekor", val:() => num("blokBest"), suf:" puan" },
+  { ic:"📦", nm:"Yıldız İtmece · çözülen", val:() => cnt(obj("itmeceSolved")), suf:"/25 bölüm" },
+  { ic:"🦄", nm:"Unicorn Macerası · bölüm", val:() => cnt(obj("maceraDone")), suf:"/5 bölüm" },
+  { ic:"🍬", nm:"Büyü Bahçesi · yıldız", val:() => { const st = obj("bahceStars"); return Object.values(st).reduce((a,x)=>a+(+x||0),0); }, suf:" ⭐" }
+];
+
+const grid = document.getElementById("gameGrid");
+let played = 0;
+GAMES.forEach(g => {
+  const v = g.val();
+  if (v > 0) played++;
+  const d = document.createElement("div");
+  d.className = "stat" + (v > 0 ? "" : " empty");
+  d.innerHTML = `<div class="ic">${g.ic}</div><div class="nm">${g.nm}</div><div class="val">${v > 0 ? v + g.suf : "—"}</div>`;
+  grid.appendChild(d);
+});
+
+// Korece
+const K = obj("koreceSave");
+const kb = document.getElementById("krBox");
+if (K && (K.xp || 0) >= 0 && Object.keys(K).length) {
+  const lessons = cnt(K.lessonsDone || {});
+  const words = Object.values(K.srs || {}).filter(x => x.box >= 2).length;
+  const sents = cnt(K.sentDone || {});
+  const grams = cnt(K.gramDone || {});
+  const stories = cnt(K.storiesDone || {});
+  const rows = [
+    ["⭐ Toplam XP", K.xp || 0, null],
+    ["🔥 Çalışma serisi", (K.streak || 0) + " gün", null],
+    ["📖 Hangul dersleri", lessons + "/8", lessons/8],
+    ["💬 Öğrenilen kelime", words + "/168", words/168],
+    ["🧱 Kurulan cümle", sents + "/16", sents/16],
+    ["🧩 Dilbilgisi dersi", grams + "/8", grams/8],
+    ["📕 Okunan hikâye", stories + "/4", stories/4]
+  ];
+  kb.innerHTML = rows.map(([nm, val, p]) =>
+    `<div class="row"><span>${nm}</span><span>${val}</span></div>` +
+    (p != null ? `<div class="pbar"><div style="width:${Math.min(100, p*100)}%"></div></div>` : "")
+  ).join("");
+} else {
+  kb.innerHTML = '<div style="font-size:.85rem;opacity:.8">Henüz Korece Dünyası açılmamış — 🇰🇷 modülüne göz at!</div>';
+}
+
+// koleksiyon
+const coll = document.getElementById("collGrid");
+const badges = obj("koreceBadgesShown");
+const collItems = [
+  { ic:"🎮", nm:"Oynanan oyun", val: played + "/" + GAMES.length },
+  { ic:"🏅", nm:"Korece rozeti", val: cnt(badges) + "/15" },
+  { ic:"🐯", nm:"Pratik seansı", val: (K.sessions || 0) + " kez" },
+  { ic:"✍️", nm:"Tamamlanan dikte", val: ((K.counters||{}).dicts || 0) + " kez" }
+];
+collItems.forEach(c => {
+  const d = document.createElement("div");
+  d.className = "stat";
+  d.innerHTML = `<div class="ic">${c.ic}</div><div class="nm">${c.nm}</div><div class="val">${c.val}</div>`;
+  coll.appendChild(d);
+});
+
+// hero özeti
+const totalScore = num("yilanBest") + num("yildizBest") + num("roketBest") + num("blokBest");
+document.getElementById("heroSub").textContent =
+  `${played} oyunda rekor · ${K.xp || 0} Korece XP · ${cnt(badges)} rozet`;
+document.getElementById("heroTitle").textContent =
+  (K.xp || 0) > 1000 ? "Korece Yıldızı 🌟" : played >= 5 ? "Oyun Ustası 🏆" : "Oyun Kahramanı 🦄";
+</script>
+<script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function(){}); }
+</script>
+</body>
+</html>

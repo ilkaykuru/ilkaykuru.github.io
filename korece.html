@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Korece Dünyası 🇰🇷</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#2b1055">
+
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Segoe UI',system-ui,sans-serif; }
   body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#2d1b4e 0%,#5b3a8c 55%,#c96fa8 100%);
@@ -211,6 +215,23 @@
   .pnode .ptxt { flex:1; font-size:.88rem; font-weight:bold; }
   .pnode .ptxt span { display:block; font-size:.7rem; opacity:.75; font-weight:normal; }
   .pnode .pst { font-size:1.2rem; }
+
+  /* v6: hikayeler + sertifika */
+  .story-line { width:100%; background:rgba(255,255,255,.96); color:#3b2660; border-radius:14px;
+    padding:11px 14px; margin-bottom:8px; cursor:pointer; opacity:.35; transition:opacity .3s; }
+  .story-line.on { opacity:1; }
+  .story-line .kr { font-size:1.15rem; font-weight:bold; }
+  .story-line .rom { font-size:.72rem; color:#8a5cb8; }
+  .story-line .tr { font-size:.85rem; margin-top:3px; opacity:.8; display:none; }
+  .story-line.revealed .tr { display:block; }
+  .cert-card { width:100%; background:rgba(255,255,255,.13); border-radius:16px; padding:14px;
+    margin-bottom:10px; display:flex; align-items:center; gap:12px; }
+  .cert-card.locked { opacity:.45; }
+  .cert-card .ci { font-size:2.2rem; }
+  .cert-card .cinfo { flex:1; font-size:.88rem; font-weight:bold; }
+  .cert-card .cinfo span { display:block; font-size:.72rem; opacity:.75; font-weight:normal; }
+  .cert-card button { border:none; border-radius:11px; padding:10px 14px; font-weight:bold; font-size:.82rem;
+    cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
 </style>
 </head>
 <body>
@@ -249,6 +270,8 @@
     <div class="mod" data-go="gramer"><span class="ico">🧩</span><h3>Cümle Sırları</h3><p>Mini dilbilgisi dersleri</p></div>
     <div class="mod" data-go="session" style="border-color:rgba(255,217,61,.65);background:rgba(255,217,61,.16)"><span class="ico">🐯</span><h3>Pratik Seansı</h3><p>Karma alıştırma · kalpli!</p></div>
     <div class="mod" data-go="path"><span class="ico">🗺️</span><h3>Yolculuk</h3><p>Öğrenme haritan</p></div>
+    <div class="mod" data-go="stories"><span class="ico">📕</span><h3>Hikâyeler</h3><p>Satır satır sesli okuma</p></div>
+    <div class="mod" data-go="certs"><span class="ico">🎖️</span><h3>Sertifikalarım</h3><p>Kazan, indir, duvara as!</p></div>
   </div>
   <div id="nextStep">🎓 ...</div>
   <div id="wotd" style="width:100%;background:rgba(255,255,255,.15);border-radius:16px;padding:12px 14px;margin-top:4px;text-align:center;cursor:pointer">
@@ -441,6 +464,23 @@
 
 <!-- YOLCULUK -->
 <div class="page" id="path"><div class="path" id="pathList"></div></div>
+
+<!-- HIKAYELER -->
+<div class="page" id="stories"><div class="sent-list" id="storyList"></div></div>
+<div class="page" id="storyRead">
+  <div class="q-head"><span id="stTitle"></span></div>
+  <div id="stLines" style="width:100%;margin-top:10px"></div>
+  <button class="gold-btn" id="stNextLine">▶️ Sonraki Satır</button>
+</div>
+
+<!-- SERTIFIKALAR -->
+<div class="page" id="certs">
+  <div style="width:100%;background:rgba(255,255,255,.13);border-radius:16px;padding:12px;margin-top:8px;font-size:.85rem;line-height:1.5">
+    Hedefleri tamamla, sertifikanı <b>PNG olarak indir</b>, yazdır ve duvarına as! 🖼️
+  </div>
+  <div id="certList" style="width:100%;margin-top:10px"></div>
+  <canvas id="certCv" width="1200" height="850" style="display:none"></canvas>
+</div>
 
 <div class="screen" id="resultScreen">
   <h2 id="resTitle"></h2>
@@ -1877,6 +1917,167 @@ Object.assign(TITLES, { session:"🐯 Pratik Seansı", path:"🗺️ Yolculuk" }
 document.querySelectorAll(".mod[data-go]").forEach(m => { m.onclick = () => go(m.dataset.go); });
 
 
+
+/* ================= v6: HIKAYELER + SERTIFIKALAR ================= */
+const STORIES = [
+ { t:"🐱 고양이와 우유", lines:[
+   ["고양이가 있어요.","goyangiga isseoyo.","Bir kedi var."],
+   ["고양이는 배고파요.","goyangineun baegopayo.","Kedi acıkmış."],
+   ["엄마가 우유를 줘요.","eommaga uyureul jwoyo.","Anne süt veriyor."],
+   ["고양이가 우유를 마셔요.","goyangiga uyureul masyeoyo.","Kedi sütü içiyor."],
+   ["고양이는 행복해요!","goyangineun haengbokaeyo!","Kedi mutlu!"] ] },
+ { t:"🏫 학교 가는 날", lines:[
+   ["오늘은 월요일이에요.","oneureun woryoirieyo.","Bugün pazartesi."],
+   ["저는 학교에 가요.","jeoneun hakgyoe gayo.","Okula gidiyorum."],
+   ["가방에 책하고 연필이 있어요.","gabange chaekago yeonpiri isseoyo.","Çantamda kitap ve kalem var."],
+   ["친구를 만나요.","chingureul mannayo.","Arkadaşımla buluşuyorum."],
+   ["같이 교실에 가요.","gachi gyosire gayo.","Birlikte sınıfa gidiyoruz."],
+   ["공부가 재미있어요!","gongbuga jaemiisseoyo!","Ders çalışmak eğlenceli!"] ] },
+ { t:"🎂 생일 파티", lines:[
+   ["오늘은 제 생일이에요!","oneureun je saengirieyo!","Bugün benim doğum günüm!"],
+   ["가족이 집에 와요.","gajogi jibe wayo.","Ailem eve geliyor."],
+   ["엄마가 케이크를 만들어요.","eommaga keikeureul mandeureoyo.","Annem pasta yapıyor."],
+   ["우리는 노래를 해요.","urineun noraereul haeyo.","Şarkı söylüyoruz."],
+   ["선물을 받아요.","seonmureul badayo.","Hediye alıyorum."],
+   ["정말 행복한 날이에요!","jeongmal haengbokan narieyo!","Gerçekten mutlu bir gün!"] ] },
+ { t:"🌧️ 비 오는 날", lines:[
+   ["하늘이 회색이에요.","haneuri hoesaegieyo.","Gökyüzü gri."],
+   ["비가 와요.","biga wayo.","Yağmur yağıyor."],
+   ["저는 집에 있어요.","jeoneun jibe isseoyo.","Ben evdeyim."],
+   ["창문에서 비를 봐요.","changmuneseo bireul bwayo.","Pencereden yağmuru izliyorum."],
+   ["따뜻한 우유를 마셔요.","ttatteutan uyureul masyeoyo.","Sıcak süt içiyorum."],
+   ["비 오는 날도 좋아요.","bi oneun naldo joayo.","Yağmurlu günler de güzel."] ] }
+];
+let ST = null;
+function renderStoryList() {
+  if (!S.storiesDone) S.storiesDone = {};
+  const list = document.getElementById("storyList"); list.innerHTML = "";
+  STORIES.forEach((st, i) => {
+    const d = document.createElement("div");
+    d.className = "sent-item";
+    d.innerHTML = `<span class="st">${S.storiesDone[i] ? "✅" : "📕"}</span>
+      <span class="info"><b>${st.t}</b>${st.lines.length} cümle</span>`;
+    d.onclick = () => openStory(i);
+    list.appendChild(d);
+  });
+}
+function openStory(i) {
+  ST = { i, story: STORIES[i], line: 0 };
+  document.getElementById("stTitle").textContent = STORIES[i].t;
+  const box = document.getElementById("stLines"); box.innerHTML = "";
+  STORIES[i].lines.forEach((L, k) => {
+    const d = document.createElement("div");
+    d.className = "story-line";
+    d.id = "stl" + k;
+    d.innerHTML = `<div class="kr">${L[0]} 🔊</div><div class="rom">${L[1]}</div><div class="tr">🇹🇷 ${L[2]}</div>`;
+    d.onclick = () => { if (d.classList.contains("on")) { d.classList.add("revealed"); speak(L[0], 0.75); } };
+    box.appendChild(d);
+  });
+  document.getElementById("stNextLine").textContent = "▶️ Başla";
+  go("storyRead");
+}
+document.getElementById("stNextLine").onclick = () => {
+  if (!ST) return;
+  if (ST.line < ST.story.lines.length) {
+    const el = document.getElementById("stl" + ST.line);
+    el.classList.add("on", "revealed");
+    speak(ST.story.lines[ST.line][0], 0.75);
+    try { el.scrollIntoView({ behavior:"smooth", block:"center" }); } catch(e) {}
+    ST.line++;
+    document.getElementById("stNextLine").textContent =
+      ST.line < ST.story.lines.length ? "▶️ Sonraki Satır" : "🏁 Hikâyeyi Bitir";
+  } else {
+    const first = !S.storiesDone[ST.i];
+    if (first) { S.storiesDone[ST.i] = true; save(); }
+    addXp(first ? 20 : 6);
+    showResult("📕 Hikâye Bitti!", `"${ST.story.t}" hikâyesini okudun!` + (first ? " (+20 XP)" : ""),
+      () => go("stories", false));
+  }
+};
+
+/* ---------- SERTIFIKALAR ---------- */
+const CERTS = [
+ { id:"hangul", ic:"📖", t:"Hangul Ustası", sub:"8 Hangul dersinin tamamını bitir",
+   test:() => Object.keys(S.lessonsDone||{}).filter(k=>S.lessonsDone[k]).length >= LESSONS.length },
+ { id:"kelime", ic:"💬", t:"Kelime Avcısı", sub:"50 kelimeyi öğren (kutu 3+)",
+   test:() => Object.values(S.srs||{}).filter(x=>x.box>=2).length >= 50 },
+ { id:"hikaye", ic:"📕", t:"Hikâye Okuru", sub:"4 hikâyenin hepsini oku",
+   test:() => Object.keys(S.storiesDone||{}).filter(k=>S.storiesDone[k]).length >= STORIES.length },
+ { id:"kahraman", ic:"👑", t:"Korece Kahramanı", sub:"Dersler + cümleler + dilbilgisi tamamla",
+   test:() => Object.keys(S.lessonsDone||{}).filter(k=>S.lessonsDone[k]).length >= LESSONS.length &&
+     Object.keys(S.sentDone||{}).filter(k=>S.sentDone[k]).length >= SENTENCES.length &&
+     Object.keys(S.gramDone||{}).filter(k=>S.gramDone[k]).length >= GRAM.length }
+];
+function renderCerts() {
+  const box = document.getElementById("certList"); box.innerHTML = "";
+  CERTS.forEach(c => {
+    const ok = c.test();
+    const d = document.createElement("div");
+    d.className = "cert-card" + (ok ? "" : " locked");
+    d.innerHTML = `<span class="ci">${c.ic}</span>
+      <span class="cinfo">${c.t}<span>${c.sub}</span></span>`;
+    const b = document.createElement("button");
+    b.textContent = ok ? "⬇️ İndir" : "🔒";
+    if (ok) b.onclick = () => downloadCert(c);
+    d.appendChild(b);
+    box.appendChild(d);
+  });
+}
+function downloadCert(c) {
+  const cv = document.getElementById("certCv");
+  const x = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  // zemin
+  const g = x.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, "#fdf6e3"); g.addColorStop(1, "#f5e6d3");
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  // süslü çerçeve
+  x.strokeStyle = "#b8860b"; x.lineWidth = 14; x.strokeRect(30, 30, W-60, H-60);
+  x.strokeStyle = "#daa520"; x.lineWidth = 4; x.strokeRect(54, 54, W-108, H-108);
+  x.textAlign = "center";
+  x.fillStyle = "#8b4513";
+  x.font = "bold 64px Georgia, serif";
+  x.fillText("BAŞARI SERTİFİKASI", W/2, 165);
+  x.font = "30px Georgia, serif";
+  x.fillText("🇰🇷 Korece Dünyası 🇰🇷", W/2, 225);
+  x.fillStyle = "#555";
+  x.font = "26px Georgia, serif";
+  x.fillText("Bu sertifika", W/2, 320);
+  x.fillStyle = "#a14ec9";
+  x.font = "bold 76px 'Comic Sans MS', cursive";
+  x.fillText("EYLÜL", W/2, 420);
+  x.fillStyle = "#555";
+  x.font = "26px Georgia, serif";
+  x.fillText("adına düzenlenmiştir.", W/2, 480);
+  x.fillStyle = "#8b4513";
+  x.font = "bold 44px Georgia, serif";
+  x.fillText(c.ic + "  " + c.t + "  " + c.ic, W/2, 580);
+  x.fillStyle = "#777";
+  x.font = "24px Georgia, serif";
+  x.fillText(c.sub, W/2, 630);
+  const d = new Date();
+  x.fillText("Tarih: " + d.getDate() + "." + (d.getMonth()+1) + "." + d.getFullYear(), W/2, 720);
+  x.font = "54px serif";
+  x.fillText("🐯", W/2 + 380, 730);
+  x.font = "20px Georgia, serif";
+  x.fillText("Hodu onaylı ✓", W/2 + 380, 768);
+  const a = document.createElement("a");
+  a.download = "eylul-sertifika-" + c.id + ".png";
+  a.href = cv.toDataURL("image/png");
+  a.click();
+  toast("🎖️ Sertifikan indirildi!");
+}
+
+const _origGo6 = go;
+go = function(p, push) {
+  _origGo6(p, push);
+  if (p === "stories") renderStoryList();
+  if (p === "certs") renderCerts();
+};
+Object.assign(TITLES, { stories:"📕 Hikâyeler", storyRead:"📕 Hikâye", certs:"🎖️ Sertifikalarım" });
+document.querySelectorAll(".mod[data-go]").forEach(m => { m.onclick = () => go(m.dataset.go); });
+
+
 load();
 renderStats();
 pickVoice();
@@ -1886,6 +2087,9 @@ initBackup();
 renderNextStep();
 
 if (typeof module !== 'undefined') module.exports = { compose, JONG_IDX, LESSONS, DECKS, SENTENCES, DICT_EASY, DICT_HARD, CHO, JUNG };
+</script>
+<script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function(){}); }
 </script>
 </body>
 </html>

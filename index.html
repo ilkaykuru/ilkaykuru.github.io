@@ -6,6 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Eylül'ün Oyunları">
 <title>Eylül'ün Oyun Dünyası 🌟</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#2b1055">
+
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
   body {
@@ -70,9 +74,16 @@
   <a class="card pro" href="zindan.html"><span class="ico">🗡️</span><h2>Zindan</h2><p>8 kat, ejderha, ekipman, seviye!</p></a>
 </div>
 
+<div class="sub2">🤝 Birlikte Oyna — 2 kişilik!</div>
+<div class="grid">
+  <a class="card big" href="dortbagla.html"><span class="ico">🔴</span><h2>Dört Bağla</h2><p>2 kişi veya bilgisayara karşı!</p></a>
+  <a class="card big" href="mangala.html"><span class="ico">🪨</span><h2>Mangala</h2><p>Geleneksel zekâ oyunu!</p></a>
+</div>
+
 <div class="sub2">📚 Öğrenme Köşesi</div>
 <div class="grid">
   <a class="card edu" href="korece.html"><span class="ico">🇰🇷</span><h2>Korece Dünyası</h2><p>Hangul, kelimeler, sesli quizler!</p></a>
+  <a class="card edu" href="profil.html"><span class="ico">👤</span><h2>Profilim</h2><p>Tüm rekorların ve ilerlemen!</p></a>
 </div>
 <script>
   for (let i=0;i<45;i++){
@@ -81,6 +92,9 @@
     s.style.cssText="width:"+z+"px;height:"+z+"px;left:"+(Math.random()*100)+"vw;top:"+(Math.random()*100)+"vh;animation-delay:"+(Math.random()*2)+"s";
     document.body.appendChild(s);
   }
+</script>
+<script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function(){}); }
 </script>
 </body>
 </html>

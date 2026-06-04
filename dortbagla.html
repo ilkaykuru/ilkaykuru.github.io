@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Dört Bağla 🔴🟡</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#2b1055">
+
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#16222e 0%,#2a4158 60%,#4a6b8a 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center; padding:8px; }
+  .home-btn { position:fixed; top:8px; left:10px; z-index:30; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#2a4158; box-shadow:0 4px 12px rgba(0,0,0,.3); text-decoration:none; }
+  h1 { font-size:clamp(1.2rem,4.5vw,1.7rem); margin:40px 0 6px; }
+  .bar { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-bottom:8px; align-items:center; }
+  .bar select, .bar button { border:none; border-radius:11px; padding:9px 13px; font-weight:bold; font-size:.88rem;
+    cursor:pointer; background:rgba(255,255,255,.18); color:#fff; font-family:inherit; }
+  .bar select option { color:#222; }
+  .bar button.gold { background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  .bar .pill { background:rgba(255,255,255,.14); border-radius:11px; padding:7px 13px; font-weight:bold; font-size:.85rem; }
+  #turnBar { font-weight:bold; font-size:1.05rem; min-height:1.5em; margin-bottom:8px; display:flex; align-items:center; gap:8px; }
+  .dot { width:22px; height:22px; border-radius:50%; display:inline-block; }
+  .dot.r { background:radial-gradient(circle at 35% 30%, #ff8a80, #d32f2f); }
+  .dot.y { background:radial-gradient(circle at 35% 30%, #fff59d, #f9a825); }
+  #boardWrap { background:#1d4e89; border-radius:18px; padding:10px; box-shadow:0 12px 32px rgba(0,0,0,.5); position:relative; }
+  #board { display:grid; grid-template-columns:repeat(7, var(--cs)); grid-template-rows:repeat(6, var(--cs)); gap:6px; }
+  .cell { width:var(--cs); height:var(--cs); border-radius:50%; background:#11304f; box-shadow:inset 0 3px 8px rgba(0,0,0,.55); cursor:pointer; position:relative; }
+  .cell .pc { position:absolute; inset:7%; border-radius:50%; }
+  .cell .pc.r { background:radial-gradient(circle at 35% 30%, #ff8a80, #c62828); box-shadow:0 3px 6px rgba(0,0,0,.4); }
+  .cell .pc.y { background:radial-gradient(circle at 35% 30%, #fff59d, #f9a825); box-shadow:0 3px 6px rgba(0,0,0,.4); }
+  .cell .pc.drop { animation:drop .35s cubic-bezier(.45,1.6,.6,1); }
+  @keyframes drop { from { transform:translateY(-300px); } to { transform:translateY(0); } }
+  .cell.winCell { outline:4px solid #ffd93d; outline-offset:-2px; border-radius:50%; }
+  .screen { position:fixed; inset:0; background:rgba(10,20,32,.93); backdrop-filter:blur(6px); display:none;
+    flex-direction:column; align-items:center; justify-content:center; z-index:25; text-align:center; padding:22px; }
+  .screen.show { display:flex; }
+  .screen h2 { font-size:2rem; margin-bottom:10px; }
+  .screen button { margin-top:14px; border:none; border-radius:14px; padding:13px 30px; font-weight:bold; font-size:1.1rem;
+    cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>🔴 Dört Bağla 🟡</h1>
+<div class="bar">
+  <select id="modeSel">
+    <option value="2p" selected>👨‍👧 2 Kişi</option>
+    <option value="ai1">🙂 Bilgisayar (Kolay)</option>
+    <option value="ai2">😈 Bilgisayar (Zor)</option>
+  </select>
+  <button class="gold" id="newBtn">🆕 Yeni</button>
+  <span class="pill">🔴 <span id="scoreR">0</span> — <span id="scoreY">0</span> 🟡</span>
+</div>
+<div id="turnBar"></div>
+<div id="boardWrap"><div id="board"></div></div>
+
+<div class="screen" id="overScreen">
+  <h2 id="overTitle"></h2>
+  <button onclick="newGame()">🆕 Tekrar</button>
+</div>
+
+<script>
+/* ============ ÇEKİRDEK ============ */
+const C4 = (() => {
+  const COLS = 7, ROWS = 6;
+  const emptyBoard = () => Array.from({length:ROWS}, () => new Array(COLS).fill(0)); // 0 boş, 1 kırmızı, 2 sarı
+
+  function dropRow(b, col) {
+    for (let r = ROWS-1; r >= 0; r--) if (!b[r][col]) return r;
+    return -1;
+  }
+  function winner(b) {
+    const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const p = b[r][c]; if (!p) continue;
+      for (const [dr,dc] of dirs) {
+        let k = 1, cells = [[r,c]];
+        while (k < 4) {
+          const nr = r+dr*k, nc = c+dc*k;
+          if (nr<0||nr>=ROWS||nc<0||nc>=COLS||b[nr][nc]!==p) break;
+          cells.push([nr,nc]); k++;
+        }
+        if (k === 4) return { p, cells };
+      }
+    }
+    if (b[0].every((_,c) => dropRow(b,c) === -1)) return { p:0, cells:[] }; // berabere
+    return null;
+  }
+  // değerlendirme: 4'lü pencereler
+  function evalBoard(b, me) {
+    const opp = 3 - me;
+    let s = 0;
+    const lines = [];
+    for (let r=0;r<ROWS;r++) for (let c=0;c<COLS;c++) {
+      if (c+3<COLS) lines.push([b[r][c],b[r][c+1],b[r][c+2],b[r][c+3]]);
+      if (r+3<ROWS) lines.push([b[r][c],b[r+1][c],b[r+2][c],b[r+3][c]]);
+      if (r+3<ROWS&&c+3<COLS) lines.push([b[r][c],b[r+1][c+1],b[r+2][c+2],b[r+3][c+3]]);
+      if (r+3<ROWS&&c-3>=0) lines.push([b[r][c],b[r+1][c-1],b[r+2][c-2],b[r+3][c-3]]);
+    }
+    for (const w of lines) {
+      const mine = w.filter(x=>x===me).length, theirs = w.filter(x=>x===opp).length;
+      if (mine && theirs) continue;
+      if (mine === 4) s += 10000;
+      else if (mine === 3) s += 50;
+      else if (mine === 2) s += 6;
+      if (theirs === 4) s -= 10000;
+      else if (theirs === 3) s -= 60;
+      else if (theirs === 2) s -= 6;
+    }
+    // merkez bonusu
+    for (let r=0;r<ROWS;r++) { if (b[r][3]===me) s += 4; else if (b[r][3]===3-me) s -= 4; }
+    return s;
+  }
+  const ORDER = [3,2,4,1,5,0,6];
+  function search(b, depth, alpha, beta, turn, me) {
+    const w = winner(b);
+    if (w) {
+      if (w.p === 0) return 0;
+      return (w.p === me ? 100000 + depth : -100000 - depth);
+    }
+    if (depth === 0) return evalBoard(b, me);
+    const maximizing = turn === me;
+    let best = maximizing ? -Infinity : Infinity;
+    for (const c of ORDER) {
+      const r = dropRow(b, c);
+      if (r < 0) continue;
+      b[r][c] = turn;
+      const v = search(b, depth-1, alpha, beta, 3-turn, me);
+      b[r][c] = 0;
+      if (maximizing) { best = Math.max(best, v); alpha = Math.max(alpha, v); }
+      else { best = Math.min(best, v); beta = Math.min(beta, v); }
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+  function bestMove(b, me, depth) {
+    let best = -Infinity, move = -1;
+    const scored = [];
+    for (const c of ORDER) {
+      const r = dropRow(b, c);
+      if (r < 0) continue;
+      b[r][c] = me;
+      const v = search(b, depth-1, -Infinity, Infinity, 3-me, me);
+      b[r][c] = 0;
+      scored.push({c, v});
+      if (v > best) { best = v; move = c; }
+    }
+    return { move, scored };
+  }
+  return { COLS, ROWS, emptyBoard, dropRow, winner, bestMove, evalBoard };
+})();
+
+/* ============ ARAYÜZ ============ */
+let B, turn, mode = '2p', over = false, scoreR = 0, scoreY = 0, busy = false;
+const boardEl = document.getElementById('board');
+
+function sizeBoard() {
+  const cs = Math.floor(Math.min((window.innerWidth - 50) / 7, (window.innerHeight - 260) / 6, 64));
+  document.documentElement.style.setProperty('--cs', Math.max(36, cs) + 'px');
+}
+
+function newGame() {
+  B = C4.emptyBoard();
+  turn = 1; over = false; busy = false;
+  mode = document.getElementById('modeSel').value;
+  document.getElementById('overScreen').classList.remove('show');
+  render();
+  setTurnBar();
+}
+window.newGame = newGame;
+
+function render(dropAt, winCells) {
+  boardEl.innerHTML = '';
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 7; c++) {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    if (winCells && winCells.some(([wr,wc]) => wr===r && wc===c)) d.classList.add('winCell');
+    const v = B[r][c];
+    if (v) {
+      const p = document.createElement('div');
+      p.className = 'pc ' + (v===1?'r':'y') + (dropAt && dropAt[0]===r && dropAt[1]===c ? ' drop' : '');
+      d.appendChild(p);
+    }
+    d.onclick = () => tapCol(c);
+    boardEl.appendChild(d);
+  }
+}
+
+function setTurnBar(msg) {
+  const tb = document.getElementById('turnBar');
+  if (msg) { tb.innerHTML = msg; return; }
+  const isAI = mode !== '2p' && turn === 2;
+  tb.innerHTML = `<span class="dot ${turn===1?'r':'y'}"></span> ` +
+    (isAI ? 'Bilgisayar düşünüyor…' : (mode==='2p' ? (turn===1?'Kırmızı':'Sarı') + ' oyuncunun sırası' : 'Senin sıran!'));
+}
+
+function tapCol(c) {
+  if (over || busy) return;
+  if (mode !== '2p' && turn === 2) return;
+  if (!play(c)) return;
+  if (!over && mode !== '2p' && turn === 2) {
+    busy = true;
+    setTurnBar();
+    setTimeout(aiMove, 550 + Math.random()*500);
+  }
+}
+
+function play(c) {
+  const r = C4.dropRow(B, c);
+  if (r < 0) return false;
+  B[r][c] = turn;
+  const w = C4.winner(B);
+  render([r,c], w && w.p ? w.cells : null);
+  if (w) { finish(w); return true; }
+  turn = 3 - turn;
+  setTurnBar();
+  return true;
+}
+
+function aiMove() {
+  const depth = mode === 'ai1' ? 2 : 6;
+  let { move, scored } = C4.bestMove(B, 2, depth);
+  if (mode === 'ai1' && Math.random() < 0.35 && scored.length > 1) {
+    // kolay: bazen en iyi olmayan hamle (ama kaybettiren hamle değilse)
+    const okMoves = scored.filter(s => s.v > -50000);
+    move = okMoves[Math.floor(Math.random()*okMoves.length)].c;
+  }
+  busy = false;
+  play(move);
+}
+
+function finish(w) {
+  over = true;
+  let title;
+  if (w.p === 0) title = '🤝 Berabere!';
+  else {
+    if (w.p === 1) scoreR++; else scoreY++;
+    document.getElementById('scoreR').textContent = scoreR;
+    document.getElementById('scoreY').textContent = scoreY;
+    if (mode === '2p') title = (w.p===1 ? '🔴 Kırmızı' : '🟡 Sarı') + ' kazandı!';
+    else title = w.p === 1 ? '🏆 Kazandın!' : '🤖 Bilgisayar kazandı!';
+  }
+  setTurnBar('🏁 ' + title);
+  setTimeout(() => {
+    document.getElementById('overTitle').textContent = title;
+    document.getElementById('overScreen').classList.add('show');
+  }, 1100);
+}
+
+document.getElementById('newBtn').onclick = newGame;
+document.getElementById('modeSel').onchange = newGame;
+window.addEventListener('resize', () => { sizeBoard(); if (B) render(); });
+sizeBoard();
+newGame();
+
+if (typeof module !== 'undefined') module.exports = C4;
+</script>
+<script>
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(function(){}); }
+</script>
+</body>
+</html>
