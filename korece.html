@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Korece Dünyası 🇰🇷</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#2d1b4e 0%,#5b3a8c 55%,#c96fa8 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center; padding:8px; }
+  .home-btn { position:fixed; top:8px; left:10px; z-index:30; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#5b3a8c; box-shadow:0 4px 12px rgba(0,0,0,.3); text-decoration:none; }
+  .back-btn { position:fixed; top:8px; right:10px; z-index:30; border:none; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#5b3a8c; box-shadow:0 4px 12px rgba(0,0,0,.3); cursor:pointer; display:none; }
+  .back-btn.show { display:block; }
+  h1 { font-size:clamp(1.2rem,4.5vw,1.8rem); margin:40px 0 4px; text-shadow:0 3px 10px rgba(0,0,0,.4); text-align:center; }
+  .page { display:none; flex-direction:column; align-items:center; width:100%; max-width:560px; }
+  .page.show { display:flex; }
+
+  /* ana sayfa */
+  .stats { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:6px 0 14px; }
+  .stats div { background:rgba(255,255,255,.15); border-radius:12px; padding:7px 14px; font-weight:bold; font-size:.9rem; }
+  .modules { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; width:100%; }
+  .mod { background:rgba(255,255,255,.14); border:2px solid rgba(255,255,255,.3); border-radius:20px;
+    padding:18px 12px; text-align:center; cursor:pointer; transition:transform .15s; }
+  .mod:active { transform:scale(.94); }
+  .mod .ico { font-size:2.6rem; display:block; margin-bottom:6px; }
+  .mod h3 { font-size:1.02rem; margin-bottom:4px; }
+  .mod p { font-size:.75rem; opacity:.85; }
+  #ttsNote { font-size:.75rem; opacity:.8; margin-top:14px; text-align:center; max-width:420px; }
+
+  /* hangul dersleri */
+  .lesson-list { display:flex; flex-direction:column; gap:10px; width:100%; margin-top:8px; }
+  .lesson-card { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.13); border-radius:16px;
+    padding:12px 14px; cursor:pointer; }
+  .lesson-card.locked { opacity:.45; }
+  .lesson-card .big { font-size:1.7rem; }
+  .lesson-card .info { flex:1; }
+  .lesson-card .info b { font-size:.95rem; }
+  .lesson-card .info span { display:block; font-size:.74rem; opacity:.8; }
+  .lesson-card .done { font-size:1.3rem; }
+
+  .letters { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; width:100%; margin-top:8px; }
+  .letter-card { background:rgba(255,255,255,.95); color:#3b2660; border-radius:16px; padding:12px; text-align:center; cursor:pointer; }
+  .letter-card .glyph { font-size:2.6rem; font-weight:bold; }
+  .letter-card .nm { font-size:.8rem; font-weight:bold; color:#8a5cb8; }
+  .letter-card .hint { font-size:.72rem; opacity:.8; margin-top:2px; }
+  .letter-card .ex { font-size:.74rem; margin-top:6px; background:#f0e6fa; border-radius:8px; padding:4px; }
+  .gold-btn { margin-top:14px; border:none; border-radius:14px; padding:13px 28px; font-weight:bold; font-size:1.05rem;
+    cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; box-shadow:0 6px 16px rgba(255,180,60,.4); }
+
+  /* hece fabrikası */
+  .factory { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; margin-top:8px; }
+  #sylOut { font-size:5rem; font-weight:bold; background:rgba(255,255,255,.95); color:#3b2660; border-radius:24px;
+    width:160px; height:160px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+    box-shadow:0 10px 26px rgba(0,0,0,.35); }
+  #sylRom { font-size:1rem; font-weight:bold; opacity:.9; min-height:1.4em; }
+  .jamo-row { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
+  .jamo-row .lab { width:100%; text-align:center; font-size:.78rem; font-weight:bold; opacity:.85; margin-top:4px; }
+  .jamo { border:none; border-radius:10px; width:44px; height:44px; font-size:1.25rem; font-weight:bold; cursor:pointer;
+    background:rgba(255,255,255,.18); color:#fff; }
+  .jamo.on { background:#ffd93d; color:#5b3a00; }
+
+  /* kelime desteleri */
+  .decks { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; width:100%; margin-top:8px; }
+  .deck { background:rgba(255,255,255,.14); border-radius:16px; padding:14px 10px; text-align:center; cursor:pointer;
+    border:2px solid rgba(255,255,255,.25); }
+  .deck:active { transform:scale(.95); }
+  .deck .ico { font-size:2rem; }
+  .deck h4 { font-size:.92rem; margin:4px 0 2px; }
+  .deck .prog { font-size:.72rem; opacity:.85; }
+  .deck .bar { height:6px; background:rgba(0,0,0,.3); border-radius:4px; margin-top:6px; overflow:hidden; }
+  .deck .bar div { height:100%; background:#7ed957; }
+
+  /* flashcard */
+  .fc-wrap { perspective:900px; margin-top:10px; }
+  #fcard { width:min(86vw,360px); height:230px; position:relative; transform-style:preserve-3d; transition:transform .45s; cursor:pointer; }
+  #fcard.flip { transform:rotateY(180deg); }
+  .fc-face { position:absolute; inset:0; border-radius:22px; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    box-shadow:0 12px 30px rgba(0,0,0,.35); padding:16px; text-align:center; }
+  .fc-front { background:rgba(255,255,255,.96); color:#3b2660; }
+  .fc-front .kr { font-size:2.6rem; font-weight:bold; }
+  .fc-front .rom { font-size:.95rem; color:#8a5cb8; font-weight:bold; }
+  .fc-back { background:linear-gradient(135deg,#7ed0ff,#5b9df9); color:#0a2a55; transform:rotateY(180deg); }
+  .fc-back .tr { font-size:1.7rem; font-weight:bold; }
+  .fc-btns { display:flex; gap:10px; margin-top:14px; }
+  .fc-btns button { border:none; border-radius:14px; padding:13px 22px; font-weight:bold; font-size:1rem; cursor:pointer; }
+  .fc-no { background:#ef9a9a; color:#5d1010; }
+  .fc-yes { background:#a5d6a7; color:#0b3d10; }
+  .fc-meta { font-size:.8rem; opacity:.85; margin-top:10px; }
+  .speak-chip { border:none; border-radius:50%; width:46px; height:46px; font-size:1.3rem; cursor:pointer;
+    background:#ffd93d; color:#5b3a00; box-shadow:0 4px 10px rgba(0,0,0,.25); }
+
+  /* quiz */
+  .quiz-modes { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; margin-top:8px; }
+  #qPrompt { background:rgba(255,255,255,.96); color:#3b2660; border-radius:20px; padding:20px;
+    width:100%; text-align:center; margin-top:10px; box-shadow:0 10px 24px rgba(0,0,0,.3); }
+  #qPrompt .big { font-size:2.1rem; font-weight:bold; }
+  #qPrompt .small { font-size:.85rem; color:#8a5cb8; font-weight:bold; margin-top:4px; }
+  .q-opts { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-top:12px; }
+  .q-opt { border:none; border-radius:14px; padding:16px 8px; font-size:1.05rem; font-weight:bold; cursor:pointer;
+    background:rgba(255,255,255,.9); color:#3b2660; }
+  .q-opt.ok { background:#7ed957 !important; color:#0b3d10; }
+  .q-opt.no { background:#ef9a9a !important; color:#5d1010; }
+  .q-head { display:flex; gap:10px; align-items:center; justify-content:center; margin-top:8px; font-weight:bold; }
+  /* eşleştirme */
+  .match-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-top:12px; }
+  .m-item { border:none; border-radius:14px; padding:15px 8px; font-size:1.05rem; font-weight:bold; cursor:pointer;
+    background:rgba(255,255,255,.9); color:#3b2660; }
+  .m-item.sel { background:#ffd93d; }
+  .m-item.gone { opacity:.25; pointer-events:none; }
+
+  .screen { position:fixed; inset:0; background:rgba(25,12,50,.94); backdrop-filter:blur(6px); display:none;
+    flex-direction:column; align-items:center; justify-content:center; z-index:40; text-align:center; padding:22px; }
+  .screen.show { display:flex; }
+  .screen h2 { font-size:1.9rem; margin-bottom:10px; }
+  .screen p { font-size:1.05rem; margin:4px 0; }
+  .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%) translateY(100px);
+    background:#3b2660; color:#fff; padding:12px 22px; border-radius:14px; font-weight:bold; transition:transform .3s; z-index:50; }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<button class="back-btn" id="backBtn">↩️ Geri</button>
+<h1 id="pageTitle">🇰🇷 Korece Dünyası</h1>
+
+<!-- ANA SAYFA -->
+<div class="page show" id="home">
+  <div class="stats">
+    <div>⭐ XP: <span id="xpVal">0</span></div>
+    <div>🔥 Seri: <span id="streakVal">0</span> gün</div>
+    <div>📖 Harf: <span id="lettersVal">0</span></div>
+    <div>💬 Kelime: <span id="wordsVal">0</span></div>
+  </div>
+  <div class="modules">
+    <div class="mod" data-go="hangul"><span class="ico">📖</span><h3>Hangul Dersleri</h3><p>Kore alfabesini adım adım öğren</p></div>
+    <div class="mod" data-go="factory"><span class="ico">🏭</span><h3>Hece Fabrikası</h3><p>Harfleri birleştir, heceyi dinle</p></div>
+    <div class="mod" data-go="decks"><span class="ico">🗂️</span><h3>Kelime Kartları</h3><p>8 tema, akıllı tekrar sistemi</p></div>
+    <div class="mod" data-go="quiz"><span class="ico">🎯</span><h3>Quiz Salonu</h3><p>4 farklı test modu</p></div>
+  </div>
+  <div id="ttsNote"></div>
+</div>
+
+<!-- HANGUL -->
+<div class="page" id="hangul"><div class="lesson-list" id="lessonList"></div></div>
+<div class="page" id="lesson">
+  <div class="letters" id="letterGrid"></div>
+  <button class="gold-btn" id="lessonQuizBtn">🎯 Mini Test (dersi bitir)</button>
+</div>
+
+<!-- HECE FABRİKASI -->
+<div class="page" id="factory">
+  <div class="factory">
+    <div id="sylOut">가</div>
+    <div id="sylRom">ga</div>
+    <div style="font-size:.78rem;opacity:.8">Heceye dokun = dinle 🔊</div>
+    <div class="jamo-row" id="rowCho"><span class="lab">1️⃣ Baş ünsüz</span></div>
+    <div class="jamo-row" id="rowJung"><span class="lab">2️⃣ Ünlü</span></div>
+    <div class="jamo-row" id="rowJong"><span class="lab">3️⃣ Son ünsüz (isteğe bağlı)</span></div>
+  </div>
+</div>
+
+<!-- DESTELER -->
+<div class="page" id="decks"><div class="decks" id="deckGrid"></div></div>
+
+<!-- FLASHCARD -->
+<div class="page" id="cards">
+  <div class="q-head"><span id="fcProgress"></span></div>
+  <div class="fc-wrap">
+    <div id="fcard">
+      <div class="fc-face fc-front">
+        <div class="kr" id="fcKr"></div>
+        <div class="rom" id="fcRom"></div>
+        <button class="speak-chip" id="fcSpeak">🔊</button>
+        <div style="font-size:.72rem;opacity:.6">çevirmek için dokun</div>
+      </div>
+      <div class="fc-face fc-back"><div class="tr" id="fcTr"></div><div style="font-size:.8rem">biliyor muydun?</div></div>
+    </div>
+  </div>
+  <div class="fc-btns">
+    <button class="fc-no" id="fcNo">😅 Bilemedim</button>
+    <button class="fc-yes" id="fcYes">✅ Bildim!</button>
+  </div>
+  <div class="fc-meta" id="fcMeta"></div>
+</div>
+
+<!-- QUIZ -->
+<div class="page" id="quiz">
+  <div class="quiz-modes">
+    <div class="mod" data-q="kr2tr"><span class="ico">🇰🇷→🇹🇷</span><h3>Korece → Türkçe</h3></div>
+    <div class="mod" data-q="tr2kr"><span class="ico">🇹🇷→🇰🇷</span><h3>Türkçe → Korece</h3></div>
+    <div class="mod" data-q="listen"><span class="ico">🎧</span><h3>Dinleme</h3></div>
+    <div class="mod" data-q="match"><span class="ico">🔗</span><h3>Eşleştirme</h3></div>
+  </div>
+</div>
+<div class="page" id="quizPlay">
+  <div class="q-head"><span id="qProgress"></span><span>·</span><span>✅ <span id="qScore">0</span></span></div>
+  <div id="qPrompt"></div>
+  <div class="q-opts" id="qOpts"></div>
+  <div class="match-grid" id="mGrid" style="display:none"></div>
+</div>
+
+<div class="screen" id="resultScreen">
+  <h2 id="resTitle"></h2>
+  <p id="resMsg"></p>
+  <button class="gold-btn" id="resBtn">Devam</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= VERİ ================= */
+const LESSONS = [
+  { name:"Ders 1 · Temel Ünsüzler A", letters:[
+    { ch:"ㄱ", nm:"giyeok", rom:"g/k", hint:"'g' sesi (gül)", ex:["가방","gabang","çanta"] },
+    { ch:"ㄴ", nm:"nieun", rom:"n", hint:"'n' sesi (nar)", ex:["나무","namu","ağaç"] },
+    { ch:"ㄷ", nm:"digeut", rom:"d/t", hint:"'d' sesi (dağ)", ex:["다리","dari","köprü"] },
+    { ch:"ㄹ", nm:"rieul", rom:"r/l", hint:"'r-l' arası ses", ex:["라면","ramyeon","ramen"] },
+    { ch:"ㅁ", nm:"mieum", rom:"m", hint:"'m' sesi (mor)", ex:["물","mul","su"] } ] },
+  { name:"Ders 2 · Temel Ünsüzler B", letters:[
+    { ch:"ㅂ", nm:"bieup", rom:"b/p", hint:"'b' sesi (bal)", ex:["바다","bada","deniz"] },
+    { ch:"ㅅ", nm:"siot", rom:"s", hint:"'s' sesi (su)", ex:["사과","sagwa","elma"] },
+    { ch:"ㅇ", nm:"ieung", rom:"-/ng", hint:"başta sessiz, sonda 'ng'", ex:["아기","agi","bebek"] },
+    { ch:"ㅈ", nm:"jieut", rom:"j", hint:"'c' sesi (can)", ex:["주스","juseu","meyve suyu"] },
+    { ch:"ㅎ", nm:"hieut", rom:"h", hint:"'h' sesi (hava)", ex:["하늘","haneul","gökyüzü"] } ] },
+  { name:"Ders 3 · Güçlü Ünsüzler", letters:[
+    { ch:"ㅊ", nm:"chieut", rom:"ch", hint:"'ç' sesi (çay)", ex:["치즈","chijeu","peynir"] },
+    { ch:"ㅋ", nm:"kieuk", rom:"k", hint:"güçlü 'k' (kar)", ex:["코","ko","burun"] },
+    { ch:"ㅌ", nm:"tieut", rom:"t", hint:"güçlü 't' (top)", ex:["토끼","tokki","tavşan"] },
+    { ch:"ㅍ", nm:"pieup", rom:"p", hint:"güçlü 'p' (pasta)", ex:["포도","podo","üzüm"] } ] },
+  { name:"Ders 4 · Ünlüler A", letters:[
+    { ch:"ㅏ", nm:"a", rom:"a", hint:"'a' sesi (anne)", ex:["아빠","appa","baba"] },
+    { ch:"ㅑ", nm:"ya", rom:"ya", hint:"'ya' sesi (yaz)", ex:["야구","yagu","beyzbol"] },
+    { ch:"ㅓ", nm:"eo", rom:"eo", hint:"açık 'o' (kapıyı 'o'rt)", ex:["어머니","eomeoni","anne"] },
+    { ch:"ㅕ", nm:"yeo", rom:"yeo", hint:"'yo'ya yakın", ex:["여우","yeou","tilki"] },
+    { ch:"ㅣ", nm:"i", rom:"i", hint:"'i' sesi (ip)", ex:["이름","ireum","isim"] } ] },
+  { name:"Ders 5 · Ünlüler B", letters:[
+    { ch:"ㅗ", nm:"o", rom:"o", hint:"yuvarlak 'o' (okul)", ex:["오리","ori","ördek"] },
+    { ch:"ㅛ", nm:"yo", rom:"yo", hint:"'yo' sesi (yoğurt)", ex:["요리","yori","yemek pişirme"] },
+    { ch:"ㅜ", nm:"u", rom:"u", hint:"'u' sesi (uzay)", ex:["우유","uyu","süt"] },
+    { ch:"ㅠ", nm:"yu", rom:"yu", hint:"'yu' sesi", ex:["유리","yuri","cam"] },
+    { ch:"ㅡ", nm:"eu", rom:"eu", hint:"'ı' sesi (ılık)", ex:["그림","geurim","resim"] } ] },
+  { name:"Ders 6 · Çift Ünsüzler", letters:[
+    { ch:"ㄲ", nm:"ssang-giyeok", rom:"kk", hint:"sert 'k'", ex:["꼬리","kkori","kuyruk"] },
+    { ch:"ㄸ", nm:"ssang-digeut", rom:"tt", hint:"sert 't'", ex:["딸기","ttalgi","çilek"] },
+    { ch:"ㅃ", nm:"ssang-bieup", rom:"pp", hint:"sert 'p'", ex:["빵","ppang","ekmek"] },
+    { ch:"ㅆ", nm:"ssang-siot", rom:"ss", hint:"sert 's'", ex:["쌀","ssal","pirinç"] },
+    { ch:"ㅉ", nm:"ssang-jieut", rom:"jj", hint:"sert 'c'", ex:["짜다","jjada","tuzlu"] } ] },
+  { name:"Ders 7 · Bileşik Ünlüler A", letters:[
+    { ch:"ㅐ", nm:"ae", rom:"ae", hint:"'e' sesi (el)", ex:["개","gae","köpek"] },
+    { ch:"ㅔ", nm:"e", rom:"e", hint:"'e' sesi (ev)", ex:["네","ne","evet"] },
+    { ch:"ㅒ", nm:"yae", rom:"yae", hint:"'ye' sesi", ex:["얘기","yaegi","sohbet"] },
+    { ch:"ㅖ", nm:"ye", rom:"ye", hint:"'ye' sesi (yel)", ex:["예쁘다","yeppeuda","güzel"] } ] },
+  { name:"Ders 8 · Bileşik Ünlüler B", letters:[
+    { ch:"ㅘ", nm:"wa", rom:"wa", hint:"'va' sesi", ex:["과자","gwaja","bisküvi"] },
+    { ch:"ㅝ", nm:"wo", rom:"wo", hint:"'vo' sesi", ex:["원숭이","wonsungi","maymun"] },
+    { ch:"ㅚ", nm:"oe", rom:"oe/we", hint:"'ve' sesi", ex:["왼쪽","oenjjok","sol taraf"] },
+    { ch:"ㅟ", nm:"wi", rom:"wi", hint:"'vi' sesi", ex:["귀","gwi","kulak"] },
+    { ch:"ㅢ", nm:"ui", rom:"ui", hint:"'ıyi' sesi", ex:["의자","uija","sandalye"] } ] }
+];
+
+const DECKS = [
+  { id:"selam", ico:"👋", name:"Selamlaşma", words:[
+    ["안녕하세요","annyeonghaseyo","Merhaba (kibar)"],["안녕","annyeong","Selam"],
+    ["감사합니다","gamsahamnida","Teşekkür ederim"],["고마워","gomawo","Sağ ol"],
+    ["네","ne","Evet"],["아니요","aniyo","Hayır"],
+    ["미안해","mianhae","Özür dilerim"],["사랑해","saranghae","Seni seviyorum"],
+    ["잘 가","jal ga","Güle güle"],["어서 와","eoseo wa","Hoş geldin"],
+    ["잘 자","jal ja","İyi uykular"],["만나서 반가워","mannaseo bangawo","Memnun oldum"] ] },
+  { id:"sayi", ico:"🔢", name:"Sayılar", words:[
+    ["일","il","Bir (1)"],["이","i","İki (2)"],["삼","sam","Üç (3)"],["사","sa","Dört (4)"],
+    ["오","o","Beş (5)"],["육","yuk","Altı (6)"],["칠","chil","Yedi (7)"],["팔","pal","Sekiz (8)"],
+    ["구","gu","Dokuz (9)"],["십","sip","On (10)"],["영","yeong","Sıfır (0)"],["백","baek","Yüz (100)"] ] },
+  { id:"renk", ico:"🌈", name:"Renkler", words:[
+    ["빨간색","ppalgansaek","Kırmızı"],["파란색","paransaek","Mavi"],["노란색","noransaek","Sarı"],
+    ["초록색","choroksaek","Yeşil"],["검은색","geomeunsaek","Siyah"],["흰색","huinsaek","Beyaz"],
+    ["보라색","borasaek","Mor"],["분홍색","bunhongsaek","Pembe"],["주황색","juhwangsaek","Turuncu"],
+    ["갈색","galsaek","Kahverengi"],["회색","hoesaek","Gri"],["하늘색","haneulsaek","Açık mavi"] ] },
+  { id:"hayvan", ico:"🐾", name:"Hayvanlar", words:[
+    ["고양이","goyangi","Kedi"],["강아지","gangaji","Köpek yavrusu"],["토끼","tokki","Tavşan"],
+    ["곰","gom","Ayı"],["호랑이","horangi","Kaplan"],["사자","saja","Aslan"],
+    ["새","sae","Kuş"],["물고기","mulgogi","Balık"],["말","mal","At"],
+    ["코끼리","kokkiri","Fil"],["원숭이","wonsungi","Maymun"],["용","yong","Ejderha"] ] },
+  { id:"aile", ico:"👨‍👩‍👧", name:"Aile", words:[
+    ["엄마","eomma","Anne"],["아빠","appa","Baba"],["언니","eonni","Abla"],
+    ["오빠","oppa","Ağabey"],["동생","dongsaeng","Küçük kardeş"],["할머니","halmeoni","Büyükanne"],
+    ["할아버지","harabeoji","Büyükbaba"],["가족","gajok","Aile"],["친구","chingu","Arkadaş"],
+    ["이모","imo","Teyze"],["삼촌","samchon","Amca / Dayı"],["아기","agi","Bebek"] ] },
+  { id:"yemek", ico:"🍜", name:"Yiyecekler", words:[
+    ["밥","bap","Pilav / Yemek"],["물","mul","Su"],["우유","uyu","Süt"],
+    ["빵","ppang","Ekmek"],["사과","sagwa","Elma"],["바나나","banana","Muz"],
+    ["딸기","ttalgi","Çilek"],["김치","gimchi","Kimchi"],["라면","ramyeon","Ramen"],
+    ["과자","gwaja","Bisküvi / Cips"],["아이스크림","aiseukeurim","Dondurma"],["주스","juseu","Meyve suyu"] ] },
+  { id:"okul", ico:"🏫", name:"Okul", words:[
+    ["학교","hakgyo","Okul"],["책","chaek","Kitap"],["연필","yeonpil","Kurşun kalem"],
+    ["공책","gongchaek","Defter"],["선생님","seonsaengnim","Öğretmen"],["학생","haksaeng","Öğrenci"],
+    ["가방","gabang","Çanta"],["의자","uija","Sandalye"],["책상","chaeksang","Sıra / Masa"],
+    ["시험","siheom","Sınav"],["숙제","sukje","Ödev"],["교실","gyosil","Sınıf"] ] },
+  { id:"duygu", ico:"💖", name:"Duygular & Fiiller", words:[
+    ["좋아","joa","Güzel / Beğendim"],["슬퍼","seulpeo","Üzgünüm"],["행복해","haengbokae","Mutluyum"],
+    ["화났어","hwanasseo","Kızgınım"],["배고파","baegopa","Acıktım"],["졸려","jollyeo","Uykum var"],
+    ["가다","gada","Gitmek"],["오다","oda","Gelmek"],["먹다","meokda","Yemek yemek"],
+    ["마시다","masida","İçmek"],["자다","jada","Uyumak"],["놀다","nolda","Oynamak"] ] }
+];
+
+/* hece fabrikası verisi */
+const CHO = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+const CHO_R = ["g","kk","n","d","tt","r","m","b","pp","s","ss","","j","jj","ch","k","t","p","h"];
+const JUNG = ["ㅏ","ㅐ","ㅑ","ㅒ","ㅓ","ㅔ","ㅕ","ㅖ","ㅗ","ㅘ","ㅙ","ㅚ","ㅛ","ㅜ","ㅝ","ㅞ","ㅟ","ㅠ","ㅡ","ㅢ","ㅣ"];
+const JUNG_R = ["a","ae","ya","yae","eo","e","yeo","ye","o","wa","wae","oe","yo","u","wo","we","wi","yu","eu","ui","i"];
+const JONG = ["","ㄱ","ㄴ","ㄹ","ㅁ","ㅂ","ㅅ","ㅇ"];
+const JONG_IDX = { "":0, "ㄱ":1, "ㄴ":4, "ㄹ":8, "ㅁ":16, "ㅂ":17, "ㅅ":19, "ㅇ":21 };
+const JONG_R = { "":"", "ㄱ":"k", "ㄴ":"n", "ㄹ":"l", "ㅁ":"m", "ㅂ":"p", "ㅅ":"t", "ㅇ":"ng" };
+
+function compose(ci, vi, jongCh) {
+  return String.fromCharCode(0xAC00 + (ci*21 + vi)*28 + JONG_IDX[jongCh]);
+}
+
+/* ================= KAYIT ================= */
+const SAVE = "koreceSave";
+let S;
+function fresh() { return { xp:0, streak:0, lastDay:"", lessonsDone:{}, srs:{}, deckIntro:{} }; }
+function load() {
+  try { S = JSON.parse(localStorage.getItem(SAVE)) || fresh(); } catch(e) { S = fresh(); }
+  // seri kontrolü
+  const today = new Date().toDateString();
+  if (S.lastDay !== today) {
+    const y = new Date(); y.setDate(y.getDate()-1);
+    if (S.lastDay !== y.toDateString() && S.lastDay !== "") S.streak = 0;
+  }
+}
+function save() { try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch(e) {} }
+function addXp(n) {
+  S.xp += n;
+  const today = new Date().toDateString();
+  if (S.lastDay !== today) {
+    const y = new Date(); y.setDate(y.getDate()-1);
+    S.streak = (S.lastDay === y.toDateString()) ? S.streak + 1 : 1;
+    S.lastDay = today;
+  }
+  save(); renderStats();
+  toast("+" + n + " XP ⭐");
+}
+
+/* ================= TTS ================= */
+let koVoice = null;
+function pickVoice() {
+  try {
+    const vs = speechSynthesis.getVoices();
+    koVoice = vs.find(v => v.lang && v.lang.toLowerCase().startsWith("ko")) || null;
+    document.getElementById("ttsNote").textContent = koVoice
+      ? "🔊 Korece ses hazır: kartlara ve hecelere dokununca dinleyebilirsin!"
+      : "🔇 Bu cihazda Korece ses bulunamadı. iPad'de: Ayarlar → Erişilebilirlik → Sesli İçerik → Sesler → Korece indirin.";
+  } catch(e) {}
+}
+try { speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); } catch(e) {}
+function speak(text, rate) {
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "ko-KR";
+    if (koVoice) u.voice = koVoice;
+    u.rate = rate || 0.82;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  } catch(e) {}
+}
+
+/* ================= GEZİNME ================= */
+const TITLES = { home:"🇰🇷 Korece Dünyası", hangul:"📖 Hangul Dersleri", lesson:"📖 Ders",
+  factory:"🏭 Hece Fabrikası", decks:"🗂️ Kelime Desteleri", cards:"🃏 Kelime Kartları",
+  quiz:"🎯 Quiz Salonu", quizPlay:"🎯 Quiz" };
+let pageStack = ["home"];
+function go(p, push = true) {
+  document.querySelectorAll(".page").forEach(x => x.classList.remove("show"));
+  document.getElementById(p).classList.add("show");
+  document.getElementById("pageTitle").textContent = TITLES[p] || "";
+  document.getElementById("backBtn").classList.toggle("show", p !== "home");
+  if (push) pageStack.push(p);
+  if (p === "home") { pageStack = ["home"]; renderStats(); }
+  if (p === "hangul") renderLessons();
+  if (p === "decks") renderDecks();
+}
+document.getElementById("backBtn").onclick = () => {
+  pageStack.pop();
+  go(pageStack[pageStack.length-1] || "home", false);
+};
+document.querySelectorAll(".mod[data-go]").forEach(m => m.onclick = () => go(m.dataset.go));
+
+/* ================= ANA İSTATİSTİK ================= */
+function renderStats() {
+  document.getElementById("xpVal").textContent = S.xp;
+  document.getElementById("streakVal").textContent = S.streak;
+  document.getElementById("lettersVal").textContent =
+    Object.keys(S.lessonsDone).filter(k => S.lessonsDone[k]).reduce((a,k) => a + LESSONS[k].letters.length, 0);
+  document.getElementById("wordsVal").textContent =
+    Object.values(S.srs).filter(x => x.box >= 2).length;
+}
+
+/* ================= HANGUL DERSLERİ ================= */
+let curLesson = 0;
+function renderLessons() {
+  const list = document.getElementById("lessonList"); list.innerHTML = "";
+  LESSONS.forEach((ls, i) => {
+    const unlocked = i === 0 || S.lessonsDone[i-1];
+    const d = document.createElement("div");
+    d.className = "lesson-card" + (unlocked ? "" : " locked");
+    d.innerHTML = `<span class="big">${unlocked ? ls.letters[0].ch : "🔒"}</span>
+      <span class="info"><b>${ls.name}</b><span>${ls.letters.map(l=>l.ch).join(" · ")}</span></span>
+      <span class="done">${S.lessonsDone[i] ? "✅" : ""}</span>`;
+    if (unlocked) d.onclick = () => openLesson(i);
+    list.appendChild(d);
+  });
+}
+function openLesson(i) {
+  curLesson = i;
+  TITLES.lesson = "📖 " + LESSONS[i].name;
+  const grid = document.getElementById("letterGrid"); grid.innerHTML = "";
+  LESSONS[i].letters.forEach(L => {
+    const d = document.createElement("div");
+    d.className = "letter-card";
+    d.innerHTML = `<div class="glyph">${L.ch}</div><div class="nm">${L.nm} · ${L.rom}</div>
+      <div class="hint">${L.hint}</div><div class="ex">🔊 ${L.ex[0]} (${L.ex[1]}) = ${L.ex[2]}</div>`;
+    d.onclick = () => speak(L.ex[0]);
+    grid.appendChild(d);
+  });
+  go("lesson");
+}
+document.getElementById("lessonQuizBtn").onclick = () => startLessonQuiz();
+
+let LQ = null;
+function startLessonQuiz() {
+  const letters = LESSONS[curLesson].letters;
+  // tüm harflerden soru havuzu (4 seçenek için diğer derslerden de harf al)
+  const allLetters = LESSONS.flatMap(l => l.letters);
+  const qs = [...letters].sort(() => Math.random()-.5).map(L => {
+    const wrong = allLetters.filter(x => x.ch !== L.ch).sort(() => Math.random()-.5).slice(0,3);
+    const opts = [...wrong, L].sort(() => Math.random()-.5);
+    return { prompt:L.ch, sub:"Bu harfin sesi hangisi?", answer:L, opts, speakText:L.ex[0] };
+  });
+  LQ = { qs, i:0, score:0, type:"lesson" };
+  renderLQ();
+  go("quizPlay");
+}
+function renderLQ() {
+  const q = LQ.qs[LQ.i];
+  document.getElementById("qProgress").textContent = `Soru ${LQ.i+1}/${LQ.qs.length}`;
+  document.getElementById("qScore").textContent = LQ.score;
+  document.getElementById("mGrid").style.display = "none";
+  document.getElementById("qOpts").style.display = "grid";
+  document.getElementById("qPrompt").innerHTML =
+    `<div class="big">${q.prompt}</div><div class="small">${q.sub}</div>`;
+  const opts = document.getElementById("qOpts"); opts.innerHTML = "";
+  q.opts.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "q-opt";
+    b.textContent = o.rom + " — " + o.hint;
+    b.onclick = () => answerLQ(b, o, q);
+    opts.appendChild(b);
+  });
+}
+function answerLQ(btn, o, q) {
+  const ok = o.ch === q.answer.ch;
+  btn.classList.add(ok ? "ok" : "no");
+  if (ok) { LQ.score++; speak(q.speakText); }
+  document.querySelectorAll(".q-opt").forEach(b => b.style.pointerEvents = "none");
+  setTimeout(() => {
+    LQ.i++;
+    if (LQ.i < LQ.qs.length) renderLQ();
+    else finishLessonQuiz();
+  }, 900);
+}
+function finishLessonQuiz() {
+  const pass = LQ.score >= Math.ceil(LQ.qs.length * 0.75);
+  if (pass && !S.lessonsDone[curLesson]) { S.lessonsDone[curLesson] = true; save(); addXp(30); }
+  else if (pass) addXp(10);
+  showResult(pass ? "🎉 Dersi Geçtin!" : "💪 Biraz Daha Çalış",
+    `${LQ.score}/${LQ.qs.length} doğru` + (pass ? " — sonraki ders açıldı!" : " — harflere tekrar bak, yine dene!"),
+    () => go(pass ? "hangul" : "lesson", false));
+}
+
+/* ================= HECE FABRİKASI ================= */
+let fCho = 0, fJung = 0, fJong = "";
+function buildFactory() {
+  const mkRow = (rowId, items, fn, isOn) => {
+    const row = document.getElementById(rowId);
+    items.forEach((ch, i) => {
+      const b = document.createElement("button");
+      b.className = "jamo";
+      b.textContent = ch === "" ? "—" : ch;
+      b.onclick = () => { fn(ch, i); updateFactory(); };
+      b.dataset.i = i; b.dataset.row = rowId;
+      row.appendChild(b);
+    });
+  };
+  mkRow("rowCho", CHO, (ch,i) => fCho = i);
+  mkRow("rowJung", JUNG, (ch,i) => fJung = i);
+  mkRow("rowJong", JONG, (ch) => fJong = ch);
+  document.getElementById("sylOut").onclick = () => speak(document.getElementById("sylOut").textContent);
+  updateFactory();
+}
+function updateFactory() {
+  const syl = compose(fCho, fJung, fJong);
+  document.getElementById("sylOut").textContent = syl;
+  document.getElementById("sylRom").textContent =
+    (CHO_R[fCho] + JUNG_R[fJung] + (JONG_R[fJong]||"")) || "-";
+  document.querySelectorAll('#rowCho .jamo').forEach(b => b.classList.toggle("on", +b.dataset.i === fCho));
+  document.querySelectorAll('#rowJung .jamo').forEach(b => b.classList.toggle("on", +b.dataset.i === fJung));
+  document.querySelectorAll('#rowJong .jamo').forEach(b =>
+    b.classList.toggle("on", (b.textContent === "—" ? "" : b.textContent) === fJong));
+  speak(syl, 0.8);
+}
+
+/* ================= SRS (Leitner) ================= */
+const BOX_GAPS = [0, 10*60e3, 24*3600e3, 3*24*3600e3, 7*24*3600e3]; // kutu → tekrar aralığı
+function wordKey(deckId, kr) { return deckId + "|" + kr; }
+function getSrs(k) { return S.srs[k] || { box:0, due:0 }; }
+function gradeWord(k, known) {
+  const w = getSrs(k);
+  if (known) { w.box = Math.min(4, w.box + 1); w.due = Date.now() + BOX_GAPS[w.box]; }
+  else { w.box = 0; w.due = Date.now(); }
+  S.srs[k] = w; save();
+}
+
+/* ================= DESTELER + FLASHCARD ================= */
+let session = null;
+function renderDecks() {
+  const g = document.getElementById("deckGrid"); g.innerHTML = "";
+  DECKS.forEach(d => {
+    const learned = d.words.filter(w => getSrs(wordKey(d.id, w[0])).box >= 2).length;
+    const due = d.words.filter(w => { const s = getSrs(wordKey(d.id, w[0])); return s.box > 0 && s.due <= Date.now(); }).length;
+    const el = document.createElement("div");
+    el.className = "deck";
+    el.innerHTML = `<div class="ico">${d.ico}</div><h4>${d.name}</h4>
+      <div class="prog">${learned}/${d.words.length} öğrenildi${due ? " · 🔔 "+due+" tekrar" : ""}</div>
+      <div class="bar"><div style="width:${learned/d.words.length*100}%"></div></div>`;
+    el.onclick = () => startCards(d);
+    g.appendChild(el);
+  });
+}
+function startCards(deck) {
+  // önce vadesi gelenler, sonra yeniler, sonra kalanlar — en fazla 10 kart
+  const now = Date.now();
+  const scored = deck.words.map(w => {
+    const s = getSrs(wordKey(deck.id, w[0]));
+    let pri = 2;
+    if (s.box > 0 && s.due <= now) pri = 0;        // tekrar zamanı
+    else if (s.box === 0) pri = 1;                  // yeni
+    return { w, s, pri };
+  }).sort((a,b) => a.pri - b.pri || a.s.due - b.s.due);
+  session = { deck, list: scored.slice(0, 10).map(x => x.w), i: 0, correct: 0 };
+  TITLES.cards = "🃏 " + deck.name;
+  renderCard();
+  go("cards");
+}
+function renderCard() {
+  const [kr, rom, tr] = session.list[session.i];
+  document.getElementById("fcard").classList.remove("flip");
+  document.getElementById("fcKr").textContent = kr;
+  document.getElementById("fcRom").textContent = rom;
+  document.getElementById("fcTr").textContent = tr;
+  document.getElementById("fcProgress").textContent = `Kart ${session.i+1}/${session.list.length}`;
+  const s = getSrs(wordKey(session.deck.id, kr));
+  document.getElementById("fcMeta").textContent = "Kutu: " + "📦".repeat(s.box+1) + ` (${s.box+1}/5)`;
+  setTimeout(() => speak(kr), 350);
+}
+document.getElementById("fcard").onclick = () => document.getElementById("fcard").classList.toggle("flip");
+document.getElementById("fcSpeak").onclick = e => { e.stopPropagation(); speak(document.getElementById("fcKr").textContent); };
+document.getElementById("fcYes").onclick = () => gradeCard(true);
+document.getElementById("fcNo").onclick = () => gradeCard(false);
+function gradeCard(known) {
+  const [kr] = session.list[session.i];
+  gradeWord(wordKey(session.deck.id, kr), known);
+  if (known) session.correct++;
+  session.i++;
+  if (session.i < session.list.length) renderCard();
+  else {
+    addXp(5 + session.correct * 2);
+    showResult("🃏 Deste Bitti!", `${session.correct}/${session.list.length} kartı bildin!`,
+      () => go("decks", false));
+  }
+}
+
+/* ================= QUIZ SALONU ================= */
+const allWords = () => DECKS.flatMap(d => d.words.map(w => ({ deck:d.id, kr:w[0], rom:w[1], tr:w[2] })));
+let Q = null;
+document.querySelectorAll(".mod[data-q]").forEach(m => m.onclick = () => startQuiz(m.dataset.q));
+
+function startQuiz(mode) {
+  const pool = allWords().sort(() => Math.random()-.5);
+  if (mode === "match") { startMatch(pool); return; }
+  const qs = pool.slice(0, 10).map(w => {
+    const wrong = pool.filter(x => x.kr !== w.kr).sort(() => Math.random()-.5).slice(0,3);
+    return { w, opts: [...wrong, w].sort(() => Math.random()-.5) };
+  });
+  Q = { mode, qs, i:0, score:0 };
+  renderQ();
+  go("quizPlay");
+}
+function renderQ() {
+  const { mode } = Q;
+  const q = Q.qs[Q.i];
+  document.getElementById("qProgress").textContent = `Soru ${Q.i+1}/${Q.qs.length}`;
+  document.getElementById("qScore").textContent = Q.score;
+  document.getElementById("mGrid").style.display = "none";
+  document.getElementById("qOpts").style.display = "grid";
+  const P = document.getElementById("qPrompt");
+  if (mode === "kr2tr") P.innerHTML = `<div class="big">${q.w.kr}</div><div class="small">${q.w.rom} — Türkçesi hangisi?</div>`;
+  else if (mode === "tr2kr") P.innerHTML = `<div class="big" style="font-size:1.5rem">${q.w.tr}</div><div class="small">Korecesi hangisi?</div>`;
+  else { P.innerHTML = `<div class="big">🎧</div><div class="small">Dinle ve doğru kelimeyi seç!</div>
+    <button class="speak-chip" onclick="speak('${q.w.kr.replace(/'/g,"\\'")}')" style="margin-top:8px">🔊</button>`;
+    setTimeout(() => speak(q.w.kr), 400); }
+  const opts = document.getElementById("qOpts"); opts.innerHTML = "";
+  q.opts.forEach(o => {
+    const b = document.createElement("button");
+    b.className = "q-opt";
+    if (mode === "kr2tr") b.textContent = o.tr;
+    else if (mode === "tr2kr") b.innerHTML = `${o.kr}<br><span style="font-size:.7rem;opacity:.65">${o.rom}</span>`;
+    else b.innerHTML = `${o.kr}<br><span style="font-size:.7rem;opacity:.65">${o.tr}</span>`;
+    b.onclick = () => answerQ(b, o, q);
+    opts.appendChild(b);
+  });
+}
+function answerQ(btn, o, q) {
+  const ok = o.kr === q.w.kr;
+  btn.classList.add(ok ? "ok" : "no");
+  if (ok) { Q.score++; if (Q.mode !== "listen") speak(q.w.kr); }
+  else {
+    // doğruyu göster
+    [...document.querySelectorAll(".q-opt")].forEach(b => {
+      if (b.textContent.includes(q.w.tr) || b.textContent.includes(q.w.kr)) b.classList.add("ok");
+    });
+  }
+  document.querySelectorAll(".q-opt").forEach(b => b.style.pointerEvents = "none");
+  setTimeout(() => {
+    Q.i++;
+    if (Q.i < Q.qs.length) renderQ();
+    else {
+      addXp(Q.score * 5);
+      showResult(Q.score >= 8 ? "🏆 Süpersin!" : Q.score >= 5 ? "🎉 Güzel!" : "💪 Devam!",
+        `${Q.score}/10 doğru — +${Q.score*5} XP`, () => go("quiz", false));
+    }
+  }, 1100);
+}
+
+/* eşleştirme modu */
+let M = null;
+function startMatch(pool) {
+  const six = pool.slice(0, 6);
+  const items = [];
+  six.forEach((w, i) => {
+    items.push({ id:i, side:"kr", label:w.kr, speakKr:w.kr });
+    items.push({ id:i, side:"tr", label:w.tr });
+  });
+  items.sort(() => Math.random()-.5);
+  M = { items, sel:null, found:0, tries:0 };
+  document.getElementById("qProgress").textContent = "Eşleştirme";
+  document.getElementById("qScore").textContent = 0;
+  document.getElementById("qPrompt").innerHTML = `<div class="small">Korece kelimeyi Türkçesiyle eşleştir!</div>`;
+  document.getElementById("qOpts").style.display = "none";
+  const g = document.getElementById("mGrid");
+  g.style.display = "grid"; g.innerHTML = "";
+  items.forEach((it, idx) => {
+    const b = document.createElement("button");
+    b.className = "m-item";
+    b.textContent = it.label;
+    b.onclick = () => tapMatch(idx, b);
+    g.appendChild(b);
+  });
+  go("quizPlay");
+}
+function tapMatch(idx, btn) {
+  const it = M.items[idx];
+  if (it.side === "kr") speak(it.speakKr);
+  if (M.sel === null) { M.sel = { idx, btn }; btn.classList.add("sel"); return; }
+  if (M.sel.idx === idx) { btn.classList.remove("sel"); M.sel = null; return; }
+  const other = M.items[M.sel.idx];
+  M.tries++;
+  if (other.id === it.id && other.side !== it.side) {
+    btn.classList.add("gone"); M.sel.btn.classList.add("gone");
+    M.sel.btn.classList.remove("sel");
+    M.found++;
+    document.getElementById("qScore").textContent = M.found;
+    M.sel = null;
+    if (M.found === 6) {
+      const xp = Math.max(10, 40 - (M.tries - 6) * 3);
+      addXp(xp);
+      showResult("🔗 Hepsini Eşleştirdin!", `${M.tries} denemede bitirdin — +${xp} XP`, () => go("quiz", false));
+    }
+  } else {
+    btn.classList.add("no"); M.sel.btn.classList.add("no");
+    const a = M.sel.btn;
+    setTimeout(() => { btn.classList.remove("no"); a.classList.remove("no","sel"); }, 500);
+    M.sel = null;
+  }
+}
+
+/* ================= ORTAK ================= */
+function showResult(title, msg, andThen) {
+  document.getElementById("resTitle").textContent = title;
+  document.getElementById("resMsg").textContent = msg;
+  document.getElementById("resultScreen").classList.add("show");
+  document.getElementById("resBtn").onclick = () => {
+    document.getElementById("resultScreen").classList.remove("show");
+    andThen && andThen();
+  };
+}
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => t.classList.remove("show"), 1600);
+}
+
+load();
+buildFactory();
+renderStats();
+pickVoice();
+
+if (typeof module !== 'undefined') module.exports = { compose, JONG_IDX, LESSONS, DECKS, CHO, JUNG, CHO_R, JUNG_R };
+</script>
+</body>
+</html>
