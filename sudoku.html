@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Sudoku 🧠</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#1b2838 0%,#2c4258 60%,#5b7a99 100%);
+    color:#eee; display:flex; flex-direction:column; align-items:center; padding:8px; }
+  .home-btn { position:fixed; top:8px; left:10px; z-index:30; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#2c4258; box-shadow:0 4px 12px rgba(0,0,0,.3); text-decoration:none; }
+  h1 { font-size:clamp(1.1rem,4vw,1.6rem); margin:38px 0 6px; }
+  .bar { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin-bottom:8px; align-items:center; }
+  .bar .pill { background:rgba(255,255,255,.12); border-radius:11px; padding:6px 12px; font-weight:bold; font-size:.88rem; }
+  .bar select, .bar button { border:none; border-radius:11px; padding:8px 12px; font-weight:bold; font-size:.88rem;
+    cursor:pointer; background:rgba(255,255,255,.18); color:#fff; font-family:inherit; }
+  .bar select option { color:#222; }
+  .bar button.gold { background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  #grid { display:grid; grid-template-columns:repeat(9,var(--cs)); border:3px solid #dce6f0; border-radius:8px;
+    box-shadow:0 12px 32px rgba(0,0,0,.5); background:#dce6f0; gap:0; }
+  .cell { width:var(--cs); height:var(--cs); background:#f6f9fc; color:#1d2c3c; display:flex; align-items:center;
+    justify-content:center; font-size:calc(var(--cs)*.55); font-weight:600; cursor:pointer; position:relative;
+    border:1px solid #c3d2e0; }
+  .cell:nth-child(9n+3), .cell:nth-child(9n+6) { border-right:3px solid #5b7a99; }
+  .cell.rowB { border-bottom:3px solid #5b7a99; }
+  .cell.given { background:#e3ebf3; color:#0a141f; }
+  .cell.sel { background:#bcd8f5 !important; }
+  .cell.same { background:#d6e6f7; }
+  .cell.err { color:#d23c3c !important; }
+  .cell.hintFlash { animation:hf 1s; }
+  @keyframes hf { 0%,100%{background:#f6f9fc} 50%{background:#ffe082} }
+  .notes { position:absolute; inset:1px; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+    font-size:calc(var(--cs)*.2); color:#6b859e; font-weight:500; pointer-events:none; }
+  .notes span { display:flex; align-items:center; justify-content:center; }
+  .pad { display:grid; grid-template-columns:repeat(5,minmax(52px,64px)); gap:8px; margin-top:12px; }
+  .pad button { aspect-ratio:1; border:none; border-radius:13px; font-size:1.35rem; font-weight:bold; cursor:pointer;
+    background:rgba(255,255,255,.9); color:#2c4258; box-shadow:0 4px 10px rgba(0,0,0,.25); position:relative; }
+  .pad button:active { transform:scale(.93); }
+  .pad button .cnt { position:absolute; bottom:3px; right:6px; font-size:.6rem; color:#888; }
+  .pad button.done { opacity:.35; }
+  .pad button.func { background:rgba(255,255,255,.2); color:#fff; font-size:1.05rem; }
+  .pad button.func.on { background:#ffd93d; color:#5b3a00; }
+  .screen { position:fixed; inset:0; background:rgba(12,20,32,.94); backdrop-filter:blur(6px); display:none;
+    flex-direction:column; align-items:center; justify-content:center; z-index:25; text-align:center; padding:22px; }
+  .screen.show { display:flex; }
+  .screen h2 { font-size:1.9rem; margin-bottom:10px; }
+  .screen p { font-size:1.05rem; margin:4px 0; }
+  .screen button { margin-top:14px; border:none; border-radius:14px; padding:13px 28px; font-weight:bold; font-size:1.05rem;
+    cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  #busy { position:fixed; inset:0; background:rgba(12,20,32,.8); display:none; align-items:center; justify-content:center;
+    z-index:40; font-size:1.3rem; font-weight:bold; }
+  #busy.show { display:flex; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>🧠 Sudoku</h1>
+<div class="bar">
+  <select id="diffSel">
+    <option value="40">🙂 Kolay</option>
+    <option value="32" selected>😐 Orta</option>
+    <option value="27">😬 Zor</option>
+    <option value="24">😈 Uzman</option>
+  </select>
+  <button class="gold" id="newBtn">🆕 Yeni</button>
+  <span class="pill">⏱️ <span id="timer">0:00</span></span>
+  <span class="pill">❌ <span id="errs">0</span>/3</span>
+</div>
+<div id="grid"></div>
+<div class="pad" id="pad"></div>
+
+<div class="screen" id="winScreen">
+  <h2>🎉 Tebrikler!</h2>
+  <p id="winMsg"></p>
+  <button onclick="newGame()">🆕 Yeni Oyun</button>
+</div>
+<div class="screen" id="loseScreen">
+  <h2>💔 3 Hata Oldu</h2>
+  <p>Bu bulmaca bitti — yenisiyle devam!</p>
+  <button onclick="newGame()">🆕 Yeni Oyun</button>
+</div>
+<div id="busy">🧩 Bulmaca hazırlanıyor...</div>
+
+<script>
+/* ============ SUDOKU ÇEKİRDEĞİ ============ */
+const CORE = (() => {
+  function shuffled(a) { a=[...a]; for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  function rowOk(g, r, c, v) {
+    for (let i = 0; i < 9; i++) {
+      if (g[r*9+i] === v && i !== c) return false;
+      if (g[i*9+c] === v && i !== r) return false;
+    }
+    const br = (r/3|0)*3, bc = (c/3|0)*3;
+    for (let i = br; i < br+3; i++) for (let j = bc; j < bc+3; j++)
+      if (g[i*9+j] === v && (i !== r || j !== c)) return false;
+    return true;
+  }
+
+  // tam çözüm üret
+  function fillGrid(g, pos = 0) {
+    if (pos === 81) return true;
+    if (g[pos]) return fillGrid(g, pos+1);
+    const r = pos/9|0, c = pos%9;
+    for (const v of shuffled([1,2,3,4,5,6,7,8,9])) {
+      if (rowOk(g, r, c, v)) {
+        g[pos] = v;
+        if (fillGrid(g, pos+1)) return true;
+        g[pos] = 0;
+      }
+    }
+    return false;
+  }
+
+  // çözüm sayacı (2'de durur)
+  function countSolutions(g, limit = 2) {
+    let count = 0;
+    function bt() {
+      if (count >= limit) return;
+      // en az adaylı hücreyi bul (MRV) — hız için
+      let best = -1, bestCands = null;
+      for (let i = 0; i < 81; i++) {
+        if (g[i]) continue;
+        const r = i/9|0, c = i%9, cands = [];
+        for (let v = 1; v <= 9; v++) if (rowOk(g, r, c, v)) cands.push(v);
+        if (cands.length === 0) return;
+        if (!bestCands || cands.length < bestCands.length) { best = i; bestCands = cands; if (cands.length === 1) break; }
+      }
+      if (best === -1) { count++; return; }
+      for (const v of bestCands) {
+        g[best] = v; bt(); g[best] = 0;
+        if (count >= limit) return;
+      }
+    }
+    bt();
+    return count;
+  }
+
+  function generate(clues) {
+    const sol = new Array(81).fill(0);
+    fillGrid(sol);
+    const puzzle = [...sol];
+    // simetrik çift çıkarma ile hücre sil
+    const order = shuffled([...Array(81).keys()]);
+    let removed = 0;
+    const target = 81 - clues;
+    for (const i of order) {
+      if (removed >= target) break;
+      const j = 80 - i; // nokta simetrisi
+      if (!puzzle[i] && !puzzle[j]) continue;
+      const bi = puzzle[i], bj = puzzle[j];
+      puzzle[i] = 0; puzzle[j] = 0;
+      const g = [...puzzle];
+      if (countSolutions(g, 2) !== 1) { puzzle[i] = bi; puzzle[j] = bj; }
+      else removed += (i === j ? 1 : 2);
+    }
+    return { puzzle, sol };
+  }
+
+  return { generate, countSolutions, rowOk };
+})();
+
+/* ============ ARAYÜZ ============ */
+let puzzle, sol, user, notes, given, selIdx = -1, errCount = 0, secs = 0, tickT = null, noteMode = false, over = false;
+const gridEl = document.getElementById('grid');
+const SAVE = 'sudokuSave';
+
+function sizeGrid() {
+  const s = Math.floor(Math.min(window.innerWidth - 20, window.innerHeight - 320, 470) / 9);
+  document.documentElement.style.setProperty('--cs', Math.max(32, s) + 'px');
+}
+
+function buildGrid() {
+  gridEl.innerHTML = '';
+  for (let i = 0; i < 81; i++) {
+    const d = document.createElement('div');
+    d.className = 'cell';
+    const r = i/9|0;
+    if (r === 2 || r === 5) d.classList.add('rowB');
+    d.onclick = () => { selIdx = i; render(); };
+    gridEl.appendChild(d);
+  }
+}
+
+function render() {
+  const cells = gridEl.children;
+  const selVal = selIdx >= 0 ? (user[selIdx] || 0) : 0;
+  const counts = {};
+  for (let i = 0; i < 81; i++) counts[user[i]] = (counts[user[i]]||0)+1;
+  for (let i = 0; i < 81; i++) {
+    const d = cells[i];
+    d.classList.toggle('given', given[i]);
+    d.classList.toggle('sel', i === selIdx);
+    const sameUnit = selIdx >= 0 && (i/9|0) === (selIdx/9|0) || selIdx >= 0 && (i%9) === (selIdx%9) ||
+      (selIdx >= 0 && ((i/9|0)/3|0) === ((selIdx/9|0)/3|0) && ((i%9)/3|0) === ((selIdx%9)/3|0));
+    d.classList.toggle('same', i !== selIdx && (sameUnit || (selVal > 0 && user[i] === selVal)));
+    d.classList.toggle('err', user[i] > 0 && user[i] !== sol[i]);
+    if (user[i]) {
+      d.textContent = user[i];
+    } else if (notes[i] && notes[i].size > 0) {
+      d.textContent = '';
+      const n = document.createElement('div'); n.className = 'notes';
+      for (let v = 1; v <= 9; v++) { const s = document.createElement('span'); s.textContent = notes[i].has(v) ? v : ''; n.appendChild(s); }
+      d.appendChild(n);
+    } else d.textContent = '';
+  }
+  // rakam sayaçları
+  document.querySelectorAll('#pad button[data-v]').forEach(b => {
+    const v = +b.dataset.v;
+    const left = 9 - (counts[v] ? [...user].filter((x,i) => x === v && x === sol[i]).length : 0);
+    b.querySelector('.cnt').textContent = left;
+    b.classList.toggle('done', left <= 0);
+  });
+}
+
+function buildPad() {
+  const pad = document.getElementById('pad'); pad.innerHTML = '';
+  for (let v = 1; v <= 9; v++) {
+    const b = document.createElement('button');
+    b.dataset.v = v;
+    b.innerHTML = v + '<span class="cnt"></span>';
+    b.onclick = () => enter(v);
+    pad.appendChild(b);
+  }
+  const mk = (txt, fn, id) => { const b = document.createElement('button'); b.className = 'func'; if (id) b.id = id;
+    b.textContent = txt; b.onclick = fn; pad.appendChild(b); };
+  mk('🧽', () => enter(0));
+  mk('✏️', () => { noteMode = !noteMode; document.getElementById('noteBtn').classList.toggle('on', noteMode); }, 'noteBtn');
+  mk('💡', hint);
+  mk('↩️', undo);
+  // dolgu hücre yok; 9+4=13, 5'e tamamla
+  mk('⏸️', () => {}); // görsel denge
+  const last = pad.lastChild; last.style.visibility = 'hidden';
+}
+
+const undoStack = [];
+function snapshot() { undoStack.push({ user:[...user], notes: notes.map(s => new Set(s)) }); if (undoStack.length > 100) undoStack.shift(); }
+function undo() {
+  if (over) return;
+  const s = undoStack.pop(); if (!s) return;
+  user = s.user; notes = s.notes; render(); save();
+}
+
+function enter(v) {
+  if (over || selIdx < 0 || given[selIdx]) return;
+  snapshot();
+  if (v === 0) { user[selIdx] = 0; notes[selIdx].clear(); render(); save(); return; }
+  if (noteMode) {
+    if (user[selIdx]) return;
+    if (notes[selIdx].has(v)) notes[selIdx].delete(v); else notes[selIdx].add(v);
+    render(); save(); return;
+  }
+  user[selIdx] = v;
+  notes[selIdx].clear();
+  if (v !== sol[selIdx]) {
+    errCount++;
+    document.getElementById('errs').textContent = errCount;
+    if (errCount >= 3) { endLose(); return; }
+  } else {
+    // aynı satır/sütun/blok notlarından v'yi düş
+    const r = selIdx/9|0, c = selIdx%9;
+    for (let i = 0; i < 81; i++) {
+      const ir = i/9|0, ic = i%9;
+      if (ir === r || ic === c || ((ir/3|0) === (r/3|0) && (ic/3|0) === (c/3|0))) notes[i].delete(v);
+    }
+  }
+  render(); save();
+  checkWin();
+}
+
+function hint() {
+  if (over) return;
+  // seçili hücre boşsa onu, değilse rastgele boş hücreyi doldur
+  let target = (selIdx >= 0 && !user[selIdx] && !given[selIdx]) ? selIdx : -1;
+  if (target < 0) {
+    const empties = [...Array(81).keys()].filter(i => !user[i] && !given[i]);
+    if (!empties.length) return;
+    target = empties[Math.floor(Math.random()*empties.length)];
+  }
+  snapshot();
+  user[target] = sol[target];
+  notes[target].clear();
+  selIdx = target;
+  render(); save();
+  gridEl.children[target].classList.add('hintFlash');
+  checkWin();
+}
+
+function checkWin() {
+  for (let i = 0; i < 81; i++) if (user[i] !== sol[i]) return;
+  over = true; clearInterval(tickT);
+  try { localStorage.removeItem(SAVE); } catch(e) {}
+  document.getElementById('winMsg').textContent =
+    `${fmtTime(secs)} sürede, ${errCount} hatayla çözdün!`;
+  document.getElementById('winScreen').classList.add('show');
+}
+function endLose() {
+  over = true; clearInterval(tickT);
+  try { localStorage.removeItem(SAVE); } catch(e) {}
+  document.getElementById('loseScreen').classList.add('show');
+}
+
+const fmtTime = s => (s/60|0) + ':' + String(s%60).padStart(2,'0');
+
+function startTimer() {
+  clearInterval(tickT);
+  tickT = setInterval(() => { secs++; document.getElementById('timer').textContent = fmtTime(secs); }, 1000);
+}
+
+function save() {
+  try {
+    localStorage.setItem(SAVE, JSON.stringify({
+      puzzle, sol, user, given,
+      notes: notes.map(s => [...s]), errCount, secs,
+      diff: document.getElementById('diffSel').value
+    }));
+  } catch(e) {}
+}
+
+function tryLoad() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SAVE));
+    if (!d || !d.sol) return false;
+    puzzle = d.puzzle; sol = d.sol; user = d.user; given = d.given;
+    notes = d.notes.map(a => new Set(a));
+    errCount = d.errCount; secs = d.secs;
+    document.getElementById('diffSel').value = d.diff;
+    document.getElementById('errs').textContent = errCount;
+    document.getElementById('timer').textContent = fmtTime(secs);
+    return true;
+  } catch(e) { return false; }
+}
+
+function newGame() {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
+  document.getElementById('busy').classList.add('show');
+  setTimeout(() => {
+    const clues = +document.getElementById('diffSel').value;
+    const g = CORE.generate(clues);
+    puzzle = g.puzzle; sol = g.sol;
+    user = [...puzzle];
+    given = puzzle.map(v => v > 0);
+    notes = Array.from({length:81}, () => new Set());
+    errCount = 0; secs = 0; selIdx = -1; over = false;
+    undoStack.length = 0;
+    document.getElementById('errs').textContent = 0;
+    document.getElementById('timer').textContent = '0:00';
+    document.getElementById('busy').classList.remove('show');
+    render(); save(); startTimer();
+  }, 50);
+}
+window.newGame = newGame;
+
+document.getElementById('newBtn').onclick = newGame;
+document.addEventListener('keydown', e => {
+  if (e.key >= '1' && e.key <= '9') enter(+e.key);
+  if (e.key === 'Backspace' || e.key === 'Delete') enter(0);
+});
+
+sizeGrid(); buildGrid(); buildPad();
+window.addEventListener('resize', () => { sizeGrid(); });
+
+if (tryLoad()) { over = false; render(); startTimer(); }
+else newGame();
+
+if (typeof module !== 'undefined') module.exports = CORE;
+</script>
+</body>
+</html>

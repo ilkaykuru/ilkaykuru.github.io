@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Kart Kulesi 🃏</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { min-height:100vh; min-height:100dvh; background:linear-gradient(160deg,#0e3b22 0%,#1c5e38 60%,#2e7d4f 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center; padding:6px; }
+  .home-btn { position:fixed; top:8px; left:10px; z-index:30; border-radius:14px; padding:8px 13px; font-size:.95rem;
+    font-weight:bold; background:rgba(255,255,255,.92); color:#1c5e38; box-shadow:0 4px 12px rgba(0,0,0,.3); text-decoration:none; }
+  .bar { display:flex; gap:7px; flex-wrap:wrap; justify-content:center; margin:40px 0 8px; align-items:center; }
+  .bar .pill { background:rgba(255,255,255,.14); border-radius:11px; padding:6px 12px; font-weight:bold; font-size:.85rem; }
+  .bar button, .bar select { border:none; border-radius:11px; padding:8px 12px; font-weight:bold; font-size:.85rem;
+    cursor:pointer; background:rgba(255,255,255,.2); color:#fff; font-family:inherit; }
+  .bar select option { color:#222; }
+  .bar button.gold { background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  #table { position:relative; width:var(--tw); height:var(--th); }
+  .card {
+    position:absolute; width:var(--cw); height:var(--ch); border-radius:8px; cursor:pointer;
+    background:#fdfdf8; box-shadow:0 2px 5px rgba(0,0,0,.35);
+    display:flex; flex-direction:column; padding:4px 5px; transition:left .18s, top .18s;
+    font-weight:700; z-index:1; border:1px solid #bbb;
+  }
+  .card .top { font-size:calc(var(--cw)*.30); line-height:1; }
+  .card .mid { flex:1; display:flex; align-items:center; justify-content:center; font-size:calc(var(--cw)*.52); }
+  .card.red { color:#c62828; } .card.blk { color:#1c1c1c; }
+  .card.back { background:linear-gradient(135deg,#3949ab,#5c6bc0); border:2px solid #fff; }
+  .card.back::after { content:"❖"; color:rgba(255,255,255,.6); font-size:calc(var(--cw)*.5);
+    display:flex; align-items:center; justify-content:center; height:100%; }
+  .card.sel { box-shadow:0 0 0 3px #ffd93d, 0 4px 10px rgba(0,0,0,.4); z-index:50 !important; }
+  .slot { position:absolute; width:var(--cw); height:var(--ch); border-radius:8px; border:2px dashed rgba(255,255,255,.35);
+    display:flex; align-items:center; justify-content:center; font-size:calc(var(--cw)*.45); color:rgba(255,255,255,.35); cursor:pointer; }
+  .screen { position:fixed; inset:0; background:rgba(8,30,18,.94); backdrop-filter:blur(6px); display:none;
+    flex-direction:column; align-items:center; justify-content:center; z-index:60; text-align:center; padding:22px; }
+  .screen.show { display:flex; }
+  .screen h2 { font-size:2rem; margin-bottom:10px; }
+  .screen p { font-size:1.1rem; margin:4px 0; }
+  .screen button { margin-top:14px; border:none; border-radius:14px; padding:13px 30px; font-weight:bold; font-size:1.1rem;
+    cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  #autoBtn { position:fixed; bottom:14px; right:14px; z-index:40; display:none; border:none; border-radius:16px;
+    padding:14px 22px; font-weight:bold; font-size:1rem; cursor:pointer;
+    background:linear-gradient(135deg,#84d9a1,#4ec98a); color:#053; box-shadow:0 6px 18px rgba(0,0,0,.4); }
+  #autoBtn.show { display:block; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<div class="bar">
+  <select id="drawSel">
+    <option value="1" selected>1 kart çek</option>
+    <option value="3">3 kart çek</option>
+  </select>
+  <button class="gold" id="newBtn">🆕 Yeni</button>
+  <button id="undoBtn">↩️ Geri</button>
+  <span class="pill">🏆 <span id="score">0</span></span>
+  <span class="pill">⏱️ <span id="timer">0:00</span></span>
+  <span class="pill">👣 <span id="moves">0</span></span>
+</div>
+<div id="table"></div>
+<button id="autoBtn" onclick="autoFinish()">✨ Otomatik Bitir</button>
+
+<div class="screen" id="winScreen">
+  <h2>🎉 Kazandın!</h2>
+  <p id="winMsg"></p>
+  <button onclick="newGame()">🆕 Yeni Oyun</button>
+</div>
+
+<script>
+/* ============ SOLITAIRE ÇEKİRDEĞİ ============ */
+const SOL = (() => {
+  const SUITS = ['♠','♥','♦','♣'];
+  const RED = { '♥':true, '♦':true };
+  const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+
+  function newDeck() {
+    const d = [];
+    for (let s = 0; s < 4; s++) for (let r = 1; r <= 13; r++)
+      d.push({ suit: SUITS[s], rank: r, faceUp: false, id: s*13+r });
+    for (let i = d.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [d[i],d[j]]=[d[j],d[i]]; }
+    return d;
+  }
+
+  function deal() {
+    const deck = newDeck();
+    const tableau = [[],[],[],[],[],[],[]];
+    for (let c = 0; c < 7; c++) {
+      for (let r = c; r < 7; r++) tableau[r].push(deck.pop());
+      tableau[c][tableau[c].length-1].faceUp = true;
+    }
+    return { tableau, stock: deck, waste: [], found: [[],[],[],[]] };
+  }
+
+  const isRed = c => RED[c.suit] || false;
+
+  // tableau'ya koyma kuralı: zıt renk + bir küçük; boşsa K
+  function canTab(card, pile) {
+    if (pile.length === 0) return card.rank === 13;
+    const top = pile[pile.length-1];
+    if (!top.faceUp) return false;
+    return isRed(card) !== isRed(top) && card.rank === top.rank - 1;
+  }
+  // foundation: aynı tür artan; boşsa A
+  function canFound(card, pile) {
+    if (pile.length === 0) return card.rank === 1;
+    const top = pile[pile.length-1];
+    return card.suit === top.suit && card.rank === top.rank + 1;
+  }
+
+  return { deal, canTab, canFound, isRed, RANKS, SUITS };
+})();
+
+/* ============ OYUN DURUMU ============ */
+let G, sel = null, score = 0, moves = 0, secs = 0, tickT = null, drawN = 1, undoStack = [];
+
+function snapshot() {
+  undoStack.push(JSON.stringify({ G, score }));
+  if (undoStack.length > 200) undoStack.shift();
+}
+function undo() {
+  const s = undoStack.pop(); if (!s) return;
+  const d = JSON.parse(s);
+  G = d.G; score = d.score;
+  moves++; sel = null;
+  render();
+}
+
+function newGame() {
+  drawN = +document.getElementById('drawSel').value;
+  G = SOL.deal();
+  sel = null; score = 0; moves = 0; secs = 0; undoStack = [];
+  document.getElementById('winScreen').classList.remove('show');
+  clearInterval(tickT);
+  tickT = setInterval(() => { secs++; document.getElementById('timer').textContent = fmt(secs); }, 1000);
+  render();
+}
+window.newGame = newGame;
+const fmt = s => (s/60|0) + ':' + String(s%60).padStart(2,'0');
+
+/* ============ DÜZEN ============ */
+let CW = 56, CH = 78, GAP = 8, FAN = 22, FANB = 10;
+function layoutVars() {
+  const w = Math.min(window.innerWidth - 12, 560);
+  CW = Math.floor((w - 6*GAP) / 7);
+  CH = Math.floor(CW * 1.4);
+  FAN = Math.floor(CH * 0.30);
+  FANB = Math.floor(CH * 0.13);
+  const root = document.documentElement.style;
+  root.setProperty('--cw', CW+'px'); root.setProperty('--ch', CH+'px');
+  root.setProperty('--tw', (7*CW + 6*GAP)+'px');
+  // yükseklik: üst sıra + en uzun tableau
+  let maxLen = 13;
+  root.setProperty('--th', (CH + 14 + CH + maxLen*FAN)+'px');
+}
+
+function xOf(col) { return col * (CW + GAP); }
+
+/* ============ RENDER ============ */
+const table = document.getElementById('table');
+function render() {
+  table.innerHTML = '';
+  // stok
+  mkSlot(xOf(0), 0, '🔄', () => tapStock());
+  if (G.stock.length) mkCard(G.stock[G.stock.length-1], xOf(0), 0, () => tapStock(), false, G.stock.length);
+  // atık (son 1-3 görünür)
+  const wShow = G.waste.slice(-Math.min(3, drawN === 3 ? 3 : 1));
+  wShow.forEach((c, i) => {
+    const isTop = i === wShow.length - 1;
+    mkCard(c, xOf(1) + i*16, 0, isTop ? () => tapWaste() : null, isTop && sel && sel.zone === 'waste');
+  });
+  if (!G.waste.length) mkSlot(xOf(1), 0, '', null);
+  // foundation
+  for (let f = 0; f < 4; f++) {
+    const x = xOf(3 + f);
+    mkSlot(x, 0, SOL.SUITS[f], () => tapFound(f));
+    const pile = G.found[f];
+    if (pile.length) mkCard(pile[pile.length-1], x, 0, () => tapFound(f), false);
+  }
+  // tableau
+  const topY = CH + 14;
+  for (let t = 0; t < 7; t++) {
+    const pile = G.tableau[t];
+    mkSlot(xOf(t), topY, '', () => tapTab(t, -1));
+    let y = topY;
+    pile.forEach((c, i) => {
+      const selHere = sel && sel.zone === 'tab' && sel.pile === t && i >= sel.idx;
+      mkCard(c, xOf(t), y, () => tapTab(t, i), selHere);
+      y += c.faceUp ? FAN : FANB;
+    });
+  }
+  document.getElementById('score').textContent = score;
+  document.getElementById('moves').textContent = moves;
+  // otomatik bitirme uygun mu: stok+atık boş ve tüm tableau açık
+  const allUp = G.stock.length === 0 && G.waste.length === 0 &&
+    G.tableau.every(p => p.every(c => c.faceUp));
+  const total = G.found.reduce((a,p) => a+p.length, 0);
+  document.getElementById('autoBtn').classList.toggle('show', allUp && total < 52);
+  if (total === 52) win();
+}
+
+function mkSlot(x, y, txt, fn) {
+  const d = document.createElement('div');
+  d.className = 'slot';
+  d.style.left = x+'px'; d.style.top = y+'px';
+  d.textContent = txt;
+  if (fn) d.onclick = fn;
+  table.appendChild(d);
+}
+
+function mkCard(c, x, y, fn, isSel, stackCount) {
+  const d = document.createElement('div');
+  d.className = 'card ' + (c.faceUp ? (SOL.isRed(c) ? 'red' : 'blk') : 'back') + (isSel ? ' sel' : '');
+  d.style.left = x+'px'; d.style.top = y+'px';
+  d.style.zIndex = Math.round(y) + 2;
+  if (c.faceUp) {
+    d.innerHTML = `<div class="top">${SOL.RANKS[c.rank-1]}${c.suit}</div><div class="mid">${c.suit}</div>`;
+  } else if (stackCount) {
+    d.title = stackCount + ' kart';
+  }
+  if (fn) d.onclick = e => { e.stopPropagation(); fn(); };
+  table.appendChild(d);
+}
+
+/* ============ HAMLELER ============ */
+function clearSel() { sel = null; render(); }
+
+function tapStock() {
+  snapshot(); sel = null;
+  if (G.stock.length === 0) {
+    if (!G.waste.length) { undoStack.pop(); return; }
+    G.stock = G.waste.reverse().map(c => ({...c, faceUp:false}));
+    G.waste = [];
+    score = Math.max(0, score - (drawN === 1 ? 100 : 0));
+  } else {
+    for (let i = 0; i < drawN && G.stock.length; i++) {
+      const c = G.stock.pop(); c.faceUp = true; G.waste.push(c);
+    }
+  }
+  moves++;
+  render();
+}
+
+function tapWaste() {
+  if (!G.waste.length) return;
+  if (sel && sel.zone === 'waste') { // ikinci dokunuş: akıllı taşı
+    smartMove('waste'); return;
+  }
+  sel = { zone:'waste' };
+  render();
+}
+
+function tapFound(f) {
+  // seçili kartı foundation'a koy
+  if (sel) {
+    const card = selCard();
+    if (card && selCount() === 1 && SOL.canFound(card, G.found[f])) {
+      snapshot();
+      removeSel().forEach(c => G.found[f].push(c));
+      score += 10; moves++;
+      afterMove(); return;
+    }
+    clearSel(); return;
+  }
+  // foundation'dan geri alma (nadir): üst kartı seç
+  if (G.found[f].length) { sel = { zone:'found', pile:f }; render(); }
+}
+
+function tapTab(t, i) {
+  const pile = G.tableau[t];
+  if (sel) {
+    // hedef olarak dene
+    const movingFirst = selCard();
+    if (movingFirst && SOL.canTab(movingFirst, pile)) {
+      snapshot();
+      const cards = removeSel();
+      cards.forEach(c => pile.push(c));
+      score += sel === null ? 0 : 5;
+      moves++;
+      afterMove(); return;
+    }
+    // değilse: aynı sütunda yeni seçim mi?
+    if (sel.zone === 'tab' && sel.pile === t && sel.idx === i) { smartMove('tab'); return; }
+    sel = null;
+  }
+  if (i < 0 || !pile.length) { render(); return; }
+  const c = pile[i];
+  if (!c.faceUp) {
+    if (i === pile.length-1) { snapshot(); c.faceUp = true; score += 5; moves++; render(); }
+    return;
+  }
+  sel = { zone:'tab', pile:t, idx:i };
+  render();
+}
+
+function selCard() {
+  if (!sel) return null;
+  if (sel.zone === 'waste') return G.waste[G.waste.length-1];
+  if (sel.zone === 'found') return G.found[sel.pile][G.found[sel.pile].length-1];
+  return G.tableau[sel.pile][sel.idx];
+}
+function selCount() {
+  if (!sel) return 0;
+  if (sel.zone === 'tab') return G.tableau[sel.pile].length - sel.idx;
+  return 1;
+}
+function removeSel() {
+  let cards;
+  if (sel.zone === 'waste') cards = [G.waste.pop()];
+  else if (sel.zone === 'found') { cards = [G.found[sel.pile].pop()]; score = Math.max(0, score-10); }
+  else cards = G.tableau[sel.pile].splice(sel.idx);
+  sel = null;
+  return cards;
+}
+
+// çift dokunuş benzeri: kartı otomatik en iyi yere taşı
+function smartMove(zone) {
+  const card = selCard();
+  if (!card) { clearSel(); return; }
+  // önce foundation
+  if (selCount() === 1) {
+    for (let f = 0; f < 4; f++) {
+      if (SOL.canFound(card, G.found[f])) {
+        snapshot(); removeSel().forEach(c => G.found[f].push(c));
+        score += 10; moves++; afterMove(); return;
+      }
+    }
+  }
+  // sonra tableau
+  for (let t = 0; t < 7; t++) {
+    if (sel.zone === 'tab' && sel.pile === t) continue;
+    if (SOL.canTab(card, G.tableau[t])) {
+      snapshot(); const cards = removeSel();
+      cards.forEach(c => G.tableau[t].push(c));
+      score += 5; moves++; afterMove(); return;
+    }
+  }
+  clearSel();
+}
+
+function afterMove() {
+  // açılmamış üst kartları otomatik çevir
+  G.tableau.forEach(p => {
+    if (p.length && !p[p.length-1].faceUp) { p[p.length-1].faceUp = true; score += 5; }
+  });
+  sel = null;
+  render();
+}
+
+function autoFinish() {
+  const step = () => {
+    let movedAny = false;
+    // atıktan ve tableau'dan foundation'a taşınabilen ilk kartı taşı
+    for (let t = 0; t < 7; t++) {
+      const p = G.tableau[t];
+      if (!p.length) continue;
+      const c = p[p.length-1];
+      for (let f = 0; f < 4; f++) {
+        if (SOL.canFound(c, G.found[f])) { p.pop(); G.found[f].push(c); score += 10; moves++; movedAny = true; break; }
+      }
+      if (movedAny) break;
+    }
+    render();
+    const total = G.found.reduce((a,p) => a+p.length, 0);
+    if (movedAny && total < 52) setTimeout(step, 120);
+  };
+  step();
+}
+window.autoFinish = autoFinish;
+
+function win() {
+  clearInterval(tickT);
+  score += Math.max(0, 700 - secs); // hız bonusu
+  document.getElementById('winMsg').textContent =
+    `Skor: ${score} · Süre: ${fmt(secs)} · Hamle: ${moves}`;
+  document.getElementById('winScreen').classList.add('show');
+  // konfeti
+  const items = ['🎉','🃏','✨','⭐'];
+  for (let i = 0; i < 40; i++) setTimeout(() => {
+    const c = document.createElement('div');
+    c.style.cssText = `position:fixed;top:-20px;left:${Math.random()*100}vw;font-size:1.6rem;z-index:70;pointer-events:none;animation:fall ${2+Math.random()*2}s linear forwards`;
+    c.textContent = items[Math.floor(Math.random()*4)];
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 4500);
+  }, i*60);
+}
+const styleEl = document.createElement('style');
+styleEl.textContent = '@keyframes fall { to { transform: translateY(110vh) rotate(620deg); } }';
+document.head.appendChild(styleEl);
+
+document.getElementById('newBtn').onclick = newGame;
+document.getElementById('undoBtn').onclick = undo;
+document.getElementById('drawSel').onchange = newGame;
+document.body.onclick = () => { if (sel) clearSel(); };
+
+layoutVars();
+window.addEventListener('resize', () => { layoutVars(); if (G) render(); });
+newGame();
+
+if (typeof module !== 'undefined') module.exports = SOL;
+</script>
+</body>
+</html>
