@@ -506,16 +506,22 @@ function playMove(m) {
   legal = ENGINE.legalMoves(st);
   render();
   if (checkEnd()) return;
-  if (st.turn !== playerColor) setTimeout(aiTurn, 60);
+  if (st.turn !== playerColor) setTimeout(aiTurn, 300);
   else setStatus();
 }
 
 function aiTurn() {
   document.getElementById('thinking').classList.add('show');
+  const t0 = Date.now();
   setTimeout(() => {
     const m = ENGINE.bestMove(st, level);
-    document.getElementById('thinking').classList.remove('show');
-    if (m) playMove(m);
+    // doğal düşünme hissi: hamle hazır olsa bile 1-2 sn beklet
+    const minThink = 1000 + Math.random() * 1000;
+    const wait = Math.max(0, minThink - (Date.now() - t0));
+    setTimeout(() => {
+      document.getElementById('thinking').classList.remove('show');
+      if (m) playMove(m);
+    }, wait);
   }, 30);
 }
 
