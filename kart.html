@@ -162,37 +162,42 @@ const table = document.getElementById('table');
 function render() {
   table.innerHTML = '';
   // stok
-  mkSlot(xOf(0), 0, '🔄', () => tapStock());
-  if (G.stock.length) mkCard(G.stock[G.stock.length-1], xOf(0), 0, () => tapStock(), false, G.stock.length);
-  // atık (son 1-3 görünür)
+  mkSlot(xOf(0), 0, '\u{1F504}', () => tapStock(), 0);
+  if (G.stock.length) mkCard(G.stock[G.stock.length-1], xOf(0), 0, () => tapStock(), false, G.stock.length, 5);
+  // atik (son 1-3 gorunur)
   const wShow = G.waste.slice(-Math.min(3, drawN === 3 ? 3 : 1));
+  if (!G.waste.length) mkSlot(xOf(1), 0, '', null, 0);
   wShow.forEach((c, i) => {
     const isTop = i === wShow.length - 1;
-    mkCard(c, xOf(1) + i*16, 0, isTop ? () => tapWaste() : null, isTop && sel && sel.zone === 'waste');
+    const selHere = isTop && sel && sel.zone === 'waste';
+    mkCard(c, xOf(1) + i*16, 0, isTop ? () => tapWaste() : null, selHere, 0, selHere ? 900 : 5 + i);
   });
-  if (!G.waste.length) mkSlot(xOf(1), 0, '', null);
   // foundation
   for (let f = 0; f < 4; f++) {
     const x = xOf(3 + f);
-    mkSlot(x, 0, SOL.SUITS[f], () => tapFound(f));
+    mkSlot(x, 0, SOL.SUITS[f], () => tapFound(f), 0);
     const pile = G.found[f];
-    if (pile.length) mkCard(pile[pile.length-1], x, 0, () => tapFound(f), false);
+    if (pile.length) {
+      const selHere = sel && sel.zone === 'found' && sel.pile === f;
+      mkCard(pile[pile.length-1], x, 0, () => tapFound(f), selHere, 0, selHere ? 900 : 5);
+    }
   }
   // tableau
   const topY = CH + 14;
   for (let t = 0; t < 7; t++) {
     const pile = G.tableau[t];
-    mkSlot(xOf(t), topY, '', () => tapTab(t, -1));
+    mkSlot(xOf(t), topY, '', () => tapTab(t, -1), 0);
     let y = topY;
     pile.forEach((c, i) => {
       const selHere = sel && sel.zone === 'tab' && sel.pile === t && i >= sel.idx;
-      mkCard(c, xOf(t), y, () => tapTab(t, i), selHere);
+      // z: secili tasinan kartlar her zaman en ustte (900+), digerleri kolon-ici sirayla
+      const z = selHere ? 900 + i : 10 + t*60 + i;
+      mkCard(c, xOf(t), y, () => tapTab(t, i), selHere, 0, z);
       y += c.faceUp ? FAN : FANB;
     });
   }
   document.getElementById('score').textContent = score;
   document.getElementById('moves').textContent = moves;
-  // otomatik bitirme uygun mu: stok+atık boş ve tüm tableau açık
   const allUp = G.stock.length === 0 && G.waste.length === 0 &&
     G.tableau.every(p => p.every(c => c.faceUp));
   const total = G.found.reduce((a,p) => a+p.length, 0);
@@ -200,20 +205,21 @@ function render() {
   if (total === 52) win();
 }
 
-function mkSlot(x, y, txt, fn) {
+function mkSlot(x, y, txt, fn, z) {
   const d = document.createElement('div');
   d.className = 'slot';
   d.style.left = x+'px'; d.style.top = y+'px';
+  d.style.zIndex = z || 0;
   d.textContent = txt;
-  if (fn) d.onclick = fn;
+  if (fn) d.onclick = e => { e.stopPropagation(); fn(); };
   table.appendChild(d);
 }
 
-function mkCard(c, x, y, fn, isSel, stackCount) {
+function mkCard(c, x, y, fn, isSel, stackCount, z) {
   const d = document.createElement('div');
   d.className = 'card ' + (c.faceUp ? (SOL.isRed(c) ? 'red' : 'blk') : 'back') + (isSel ? ' sel' : '');
   d.style.left = x+'px'; d.style.top = y+'px';
-  d.style.zIndex = Math.round(y) + 2;
+  d.style.zIndex = (z != null ? z : Math.round(y) + 2);
   if (c.faceUp) {
     d.innerHTML = `<div class="top">${SOL.RANKS[c.rank-1]}${c.suit}</div><div class="mid">${c.suit}</div>`;
   } else if (stackCount) {
@@ -244,16 +250,14 @@ function tapStock() {
 
 function tapWaste() {
   if (!G.waste.length) return;
-  if (sel && sel.zone === 'waste') { // ikinci dokunuş: akıllı taşı
-    smartMove('waste'); return;
-  }
+  if (sel && sel.zone === 'waste') { smartMove(); return; }   // ayni karta tekrar = akilli tasi
   sel = { zone:'waste' };
   render();
 }
 
 function tapFound(f) {
-  // seçili kartı foundation'a koy
   if (sel) {
+    // ayni foundation'a tekrar dokunma = sec/birak degil; once tasimayi dene
     const card = selCard();
     if (card && selCount() === 1 && SOL.canFound(card, G.found[f])) {
       snapshot();
@@ -261,33 +265,34 @@ function tapFound(f) {
       score += 10; moves++;
       afterMove(); return;
     }
+    // foundation kendini sectiyse ve tekrar dokunulduysa: akilli tasi
+    if (sel.zone === 'found' && sel.pile === f) { smartMove(); return; }
     clearSel(); return;
   }
-  // foundation'dan geri alma (nadir): üst kartı seç
   if (G.found[f].length) { sel = { zone:'found', pile:f }; render(); }
 }
 
 function tapTab(t, i) {
   const pile = G.tableau[t];
   if (sel) {
-    // hedef olarak dene
+    // ayni karti tekrar sectiysek: akilli tasi
+    if (sel.zone === 'tab' && sel.pile === t && sel.idx === i) { smartMove(); return; }
     const movingFirst = selCard();
     if (movingFirst && SOL.canTab(movingFirst, pile)) {
       snapshot();
       const cards = removeSel();
       cards.forEach(c => pile.push(c));
-      score += sel === null ? 0 : 5;
-      moves++;
+      score += 5; moves++;
       afterMove(); return;
     }
-    // değilse: aynı sütunda yeni seçim mi?
-    if (sel.zone === 'tab' && sel.pile === t && sel.idx === i) { smartMove('tab'); return; }
+    // gecersiz hedef: secimi birak ve (mumkunse) yeni karti sec
     sel = null;
   }
   if (i < 0 || !pile.length) { render(); return; }
   const c = pile[i];
   if (!c.faceUp) {
     if (i === pile.length-1) { snapshot(); c.faceUp = true; score += 5; moves++; render(); }
+    else render();
     return;
   }
   sel = { zone:'tab', pile:t, idx:i };
@@ -314,12 +319,12 @@ function removeSel() {
   return cards;
 }
 
-// çift dokunuş benzeri: kartı otomatik en iyi yere taşı
-function smartMove(zone) {
+// karti otomatik en iyi yere tasi (cift dokunus)
+function smartMove() {
   const card = selCard();
   if (!card) { clearSel(); return; }
-  // önce foundation
-  if (selCount() === 1) {
+  const single = selCount() === 1;
+  if (single) {
     for (let f = 0; f < 4; f++) {
       if (SOL.canFound(card, G.found[f])) {
         snapshot(); removeSel().forEach(c => G.found[f].push(c));
@@ -327,20 +332,19 @@ function smartMove(zone) {
       }
     }
   }
-  // sonra tableau
+  const fromPile = sel.zone === 'tab' ? sel.pile : -1;
   for (let t = 0; t < 7; t++) {
-    if (sel.zone === 'tab' && sel.pile === t) continue;
+    if (t === fromPile) continue;
     if (SOL.canTab(card, G.tableau[t])) {
       snapshot(); const cards = removeSel();
       cards.forEach(c => G.tableau[t].push(c));
       score += 5; moves++; afterMove(); return;
     }
   }
-  clearSel();
+  clearSel();  // gidecek yer yok -> birak
 }
 
 function afterMove() {
-  // açılmamış üst kartları otomatik çevir
   G.tableau.forEach(p => {
     if (p.length && !p[p.length-1].faceUp) { p[p.length-1].faceUp = true; score += 5; }
   });
@@ -392,7 +396,8 @@ document.head.appendChild(styleEl);
 document.getElementById('newBtn').onclick = newGame;
 document.getElementById('undoBtn').onclick = undo;
 document.getElementById('drawSel').onchange = newGame;
-document.body.onclick = () => { if (sel) clearSel(); };
+table.addEventListener('click', e => { if (e.target === table && sel) clearSel(); });
+window._sol = () => ({ G, sel });
 
 layoutVars();
 window.addEventListener('resize', () => { layoutVars(); if (G) render(); });
