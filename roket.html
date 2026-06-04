@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Roket Kaçışı 🚀</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
+  body {
+    font-family:'Comic Sans MS','Segoe UI',sans-serif;
+    min-height:100vh; min-height:100dvh;
+    background:linear-gradient(160deg,#070b2e 0%,#2b1055 55%,#83589d 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center; padding:12px;
+  }
+  .home-btn { position:fixed; top:10px; left:12px; z-index:8; border-radius:16px; padding:10px 16px;
+    font-size:1.05rem; font-weight:bold; background:rgba(255,255,255,.92); color:#6b4a8a;
+    box-shadow:0 4px 12px rgba(0,0,0,.2); text-decoration:none; font-family:inherit; }
+  h1 { font-size:clamp(1.3rem,4.5vw,2rem); margin:42px 0 8px; text-shadow:0 3px 10px rgba(0,0,0,.4); }
+  .hud { display:flex; gap:10px; margin-bottom:10px; }
+  .hud div { background:rgba(255,255,255,.18); border-radius:14px; padding:8px 16px; font-weight:bold; }
+  canvas { background:rgba(5,8,28,.55); border-radius:18px; box-shadow:0 8px 24px rgba(0,0,0,.35);
+    width:min(94vw,420px); }
+  #over { position:fixed; inset:0; background:rgba(10,5,35,.9); display:none; flex-direction:column;
+    align-items:center; justify-content:center; z-index:10; text-align:center; padding:20px; }
+  #over.show { display:flex; }
+  #over h2 { font-size:2rem; margin-bottom:10px; }
+  #over p { font-size:1.15rem; margin:4px 0; }
+  #over button { margin-top:16px; border:none; border-radius:16px; padding:14px 32px; font-family:inherit;
+    font-size:1.15rem; font-weight:bold; cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  .hint { margin-top:8px; font-size:.9rem; opacity:.85; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>🚀 Roket Kaçışı</h1>
+<div class="hud">
+  <div>⭐ Puan: <span id="score">0</span></div>
+  <div>🏆 Rekor: <span id="best">0</span></div>
+</div>
+<canvas id="cv" width="420" height="560"></canvas>
+<div class="hint">Uçmak için ekrana dokun! Meteorların arasından geç ✨</div>
+<div id="over">
+  <h2 id="overTitle">💥 Çarptın!</h2>
+  <p>⭐ Puanın: <span id="finalScore">0</span></p>
+  <p id="overMsg"></p>
+  <button id="retryBtn">🔄 Tekrar Oyna</button>
+</div>
+<script>
+  const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  const G = 0.42, THRUST = -7.2, GAP = 175, PW = 64, SPEED = 2.6;
+  let ry, vy, pillars, score, best = 0, running = false, waiting = true, frames, stars = [];
+
+  try { best = +localStorage.getItem("roketBest") || 0; } catch(e) {}
+  document.getElementById("best").textContent = best;
+
+  const MSGS = ["Uzay madalyası kazandın! 🥇","Astronot Eylül göreve hazır! 👩‍🚀","Bir dahaki uçuş daha uzun olacak! 💪"];
+
+  for (let i=0;i<40;i++) stars.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.8+0.5 });
+
+  function reset() {
+    ry = H/2; vy = 0; pillars = []; score = 0; frames = 0;
+    document.getElementById("score").textContent = 0;
+    waiting = true; running = true;
+    document.getElementById("over").classList.remove("show");
+    requestAnimationFrame(loop);
+  }
+
+  function loop() {
+    if (!running) return;
+    frames++;
+
+    if (!waiting) {
+      vy += G; ry += vy;
+      if (frames % 95 === 0) {
+        const top = 60 + Math.random() * (H - GAP - 180);
+        pillars.push({ x: W + 20, top, passed: false });
+      }
+      pillars.forEach(p => p.x -= SPEED + Math.min(2, score*0.04));
+      pillars = pillars.filter(p => p.x > -PW);
+    }
+
+    // çiz
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = "#fff";
+    stars.forEach(s => {
+      ctx.globalAlpha = 0.4 + 0.6*Math.abs(Math.sin((frames+s.x)/40));
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    // sütunlar (meteor kuleleri)
+    pillars.forEach(p => {
+      drawPillar(p.x, 0, PW, p.top);
+      drawPillar(p.x, p.top + GAP, PW, H - p.top - GAP);
+    });
+
+    // roket
+    ctx.save();
+    ctx.translate(80, ry);
+    ctx.rotate(Math.max(-0.4, Math.min(0.6, vy * 0.06)));
+    ctx.font = "44px serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("🚀", 0, 0);
+    ctx.restore();
+
+    if (waiting) {
+      ctx.font = "22px 'Comic Sans MS', sans-serif";
+      ctx.textAlign = "center"; ctx.fillStyle = "#ffd93d";
+      ctx.fillText("Başlamak için dokun! 👆", W/2, H/2 - 90);
+    } else {
+      // skor & çarpışma
+      pillars.forEach(p => {
+        if (!p.passed && p.x + PW < 80 - 18) {
+          p.passed = true; score++;
+          document.getElementById("score").textContent = score;
+        }
+        const hitX = 80 + 20 > p.x && 80 - 20 < p.x + PW;
+        if (hitX && (ry - 16 < p.top || ry + 16 > p.top + GAP)) return endGame();
+      });
+      if (ry > H - 14 || ry < 14) return endGame();
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  function drawPillar(x, y, w, h) {
+    const grd = ctx.createLinearGradient(x, 0, x + w, 0);
+    grd.addColorStop(0, "#7a4ec9"); grd.addColorStop(.5, "#a06ce0"); grd.addColorStop(1, "#5b3a99");
+    ctx.fillStyle = grd;
+    roundRect(x, y, w, h, 14);
+    // kraterler
+    ctx.fillStyle = "rgba(255,255,255,.18)";
+    for (let cy = y + 22; cy < y + h - 16; cy += 46) {
+      ctx.beginPath(); ctx.arc(x + w/2 + ((cy/46)%2 ? 12 : -12), cy, 7, 0, 7); ctx.fill();
+    }
+  }
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x+r, y);
+    ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r);
+    ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r);
+    ctx.fill();
+  }
+
+  function endGame() {
+    running = false;
+    if (score > best) {
+      best = score;
+      try { localStorage.setItem("roketBest", best); } catch(e) {}
+      document.getElementById("best").textContent = best;
+      document.getElementById("overTitle").textContent = "🏆 Yeni Rekor Eylül!";
+    } else document.getElementById("overTitle").textContent = "💥 Çarptın!";
+    document.getElementById("finalScore").textContent = score;
+    document.getElementById("overMsg").textContent = MSGS[Math.floor(Math.random()*MSGS.length)];
+    document.getElementById("over").classList.add("show");
+  }
+
+  function tap(e) {
+    if (!running) return;
+    if (waiting) waiting = false;
+    vy = THRUST;
+  }
+  cv.addEventListener("touchstart", e => { e.preventDefault(); tap(); }, {passive:false});
+  cv.addEventListener("mousedown", tap);
+  document.addEventListener("keydown", e => { if (e.code === "Space") tap(); });
+  document.getElementById("retryBtn").onclick = reset;
+
+  reset();
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Sihirli Yapboz 🧩</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
+  body {
+    font-family:'Comic Sans MS','Segoe UI',sans-serif;
+    min-height:100vh; min-height:100dvh;
+    background:linear-gradient(160deg,#ffe5f1 0%,#dcebff 55%,#fff3c9 100%);
+    color:#6b4a8a; display:flex; flex-direction:column; align-items:center; padding:12px;
+  }
+  .home-btn { position:fixed; top:10px; left:12px; z-index:8; border-radius:16px; padding:10px 16px;
+    font-size:1.05rem; font-weight:bold; background:#fff; color:#6b4a8a;
+    box-shadow:0 4px 12px rgba(160,80,200,.25); text-decoration:none; font-family:inherit; }
+  h1 { font-size:clamp(1.3rem,4.5vw,2rem); margin:42px 0 8px; color:#a14ec9; text-shadow:2px 2px 0 #ffd9f0; }
+  .hud { display:flex; gap:10px; margin-bottom:10px; }
+  .hud div { background:#fff; border-radius:14px; padding:8px 16px; font-weight:bold; box-shadow:0 4px 10px rgba(160,80,200,.15); }
+  .levels { display:flex; gap:8px; margin-bottom:12px; }
+  .levels button { border:none; border-radius:12px; padding:9px 18px; font-family:inherit; font-weight:bold;
+    font-size:.95rem; cursor:pointer; background:#fff; color:#6b4a8a; box-shadow:0 3px 8px rgba(160,80,200,.15); }
+  .levels button.active { background:#a14ec9; color:#fff; }
+  #board {
+    position:relative; width:min(90vw,420px); height:min(90vw,420px);
+    background:#fff; border-radius:18px; padding:6px;
+    box-shadow:0 8px 24px rgba(160,80,200,.25);
+  }
+  .tile {
+    position:absolute; border-radius:10px; cursor:pointer;
+    background-repeat:no-repeat; box-shadow:inset 0 0 0 2px rgba(255,255,255,.7);
+    transition:left .18s ease, top .18s ease;
+    display:flex; align-items:flex-end; justify-content:flex-start;
+  }
+  .tile span {
+    font-size:.7rem; font-weight:bold; color:rgba(107,74,138,.65);
+    background:rgba(255,255,255,.7); border-radius:6px; padding:1px 5px; margin:3px;
+  }
+  #win { position:fixed; inset:0; background:rgba(120,60,160,.85); backdrop-filter:blur(6px);
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    z-index:10; text-align:center; padding:20px; color:#fff; }
+  #win.show { display:flex; }
+  #win h2 { font-size:2.2rem; margin-bottom:10px; }
+  #win p { font-size:1.2rem; margin:4px 0; }
+  #win button { margin-top:16px; border:none; border-radius:16px; padding:14px 32px; font-family:inherit;
+    font-size:1.15rem; font-weight:bold; cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  .confetti { position:fixed; top:-20px; font-size:1.6rem; animation:fall linear forwards; z-index:11; pointer-events:none; }
+  @keyframes fall { to { transform:translateY(110vh) rotate(720deg); } }
+  .hint { margin-top:10px; font-size:.9rem; opacity:.8; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>🧩 Sihirli Yapboz</h1>
+<div class="levels">
+  <button data-n="3" class="active">Kolay 3×3</button>
+  <button data-n="4">Zor 4×4</button>
+</div>
+<div class="hud">
+  <div>🎯 Hamle: <span id="moves">0</span></div>
+</div>
+<div id="board"></div>
+<div class="hint">Boş kareye komşu parçaya dokun, resmi tamamla! 🦄</div>
+<div id="win">
+  <h2>🎉 Harikasın Eylül! 🎉</h2>
+  <p id="winStats"></p>
+  <p>Unicorn resmini tamamladın! 🦄✨</p>
+  <button onclick="start()">🔄 Yeniden Karıştır</button>
+</div>
+<script>
+  // renkli unicorn sahnesi (SVG → data URI)
+  const SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#b388eb"/><stop offset="1" stop-color="#ffc6e0"/>
+      </linearGradient>
+    </defs>
+    <rect width="400" height="400" fill="url(#sky)"/>
+    <circle cx="330" cy="70" r="40" fill="#ffe066"/>
+    <path d="M0 300 Q100 240 200 300 T400 300 L400 400 L0 400 Z" fill="#8ee09f"/>
+    <path d="M40 90 l8 18 20 2 -15 13 5 20 -18 -11 -18 11 5 -20 -15 -13 20 -2 Z" fill="#fff" opacity=".9"/>
+    <path d="M320 180 l6 14 15 2 -11 10 3 15 -13 -8 -13 8 3 -15 -11 -10 15 -2 Z" fill="#fff" opacity=".9"/>
+    <ellipse cx="180" cy="265" rx="85" ry="55" fill="#fff"/>
+    <rect x="125" y="295" width="22" height="60" rx="10" fill="#fff"/>
+    <rect x="215" y="295" width="22" height="60" rx="10" fill="#fff"/>
+    <ellipse cx="255" cy="185" rx="44" ry="37" fill="#fff"/>
+    <polygon points="268,152 285,90 293,154" fill="#ffd93d"/>
+    <polygon points="231,153 240,126 254,150" fill="#fff"/>
+    <path d="M226 160 Q200 175 210 205 Q188 215 200 240 L225 228 Q218 205 235 193 Q228 172 245 165 Z" fill="#ff8fc7"/>
+    <path d="M100 250 Q55 255 65 300 Q78 282 92 292 Q88 268 105 272 Z" fill="#9b6cf0"/>
+    <circle cx="266" cy="180" r="6" fill="#4a2d6b"/>
+    <path d="M250 205 Q258 212 266 206" stroke="#4a2d6b" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <ellipse cx="240" cy="198" rx="7" ry="4" fill="#ffb3d9"/>
+  </svg>`;
+  const IMG = "data:image/svg+xml," + encodeURIComponent(SVG);
+
+  let N = 3, tiles = [], empty = 0, moves = 0, busy = false;
+  const board = document.getElementById("board");
+
+  document.querySelectorAll(".levels button").forEach(b => b.onclick = () => {
+    document.querySelector(".levels .active").classList.remove("active");
+    b.classList.add("active"); N = +b.dataset.n; start();
+  });
+
+  function start() {
+    document.getElementById("win").classList.remove("show");
+    moves = 0; document.getElementById("moves").textContent = 0;
+    // çözülmüş durumdan rastgele geçerli hamlelerle karıştır (her zaman çözülebilir)
+    tiles = Array.from({length: N*N}, (_, i) => i); // tiles[pos] = parça no; son parça boş
+    empty = N*N - 1;
+    let prev = -1;
+    for (let k = 0; k < 60 * N; k++) {
+      const opts = neighbors(empty).filter(p => p !== prev);
+      const pick = opts[Math.floor(Math.random() * opts.length)];
+      tiles[empty] = tiles[pick]; tiles[pick] = N*N - 1;
+      prev = empty; empty = pick;
+    }
+    render();
+  }
+
+  function neighbors(pos) {
+    const r = Math.floor(pos/N), c = pos % N, out = [];
+    if (r > 0) out.push(pos - N);
+    if (r < N-1) out.push(pos + N);
+    if (c > 0) out.push(pos - 1);
+    if (c < N-1) out.push(pos + 1);
+    return out;
+  }
+
+  function render() {
+    board.innerHTML = "";
+    const size = board.clientWidth - 12;
+    const ts = size / N;
+    tiles.forEach((piece, pos) => {
+      if (piece === N*N - 1) return; // boş
+      const d = document.createElement("div");
+      d.className = "tile";
+      const pr = Math.floor(piece/N), pc = piece % N;
+      const r = Math.floor(pos/N), c = pos % N;
+      d.style.cssText = `width:${ts-4}px;height:${ts-4}px;left:${6 + c*ts}px;top:${6 + r*ts}px;
+        background-image:url('${IMG}');background-size:${size}px ${size}px;
+        background-position:-${pc*ts}px -${pr*ts}px;`;
+      d.innerHTML = `<span>${piece+1}</span>`;
+      d.onclick = () => move(pos);
+      board.appendChild(d);
+    });
+  }
+
+  function move(pos) {
+    if (busy || !neighbors(pos).includes(empty)) return;
+    tiles[empty] = tiles[pos]; tiles[pos] = N*N - 1;
+    empty = pos;
+    moves++;
+    document.getElementById("moves").textContent = moves;
+    render();
+    if (tiles.every((p, i) => p === i)) {
+      busy = true;
+      setTimeout(() => {
+        busy = false;
+        document.getElementById("winStats").textContent = `${moves} hamlede çözdün!`;
+        document.getElementById("win").classList.add("show");
+        confetti();
+      }, 350);
+    }
+  }
+
+  function confetti() {
+    const items = ["🎉","⭐","💖","✨","🦄","🌈"];
+    for (let i = 0; i < 50; i++) setTimeout(() => {
+      const c = document.createElement("div");
+      c.className = "confetti";
+      c.textContent = items[Math.floor(Math.random()*items.length)];
+      c.style.left = Math.random()*100 + "vw";
+      c.style.animationDuration = (Math.random()*2 + 2) + "s";
+      document.body.appendChild(c);
+      setTimeout(() => c.remove(), 4500);
+    }, i * 60);
+  }
+
+  window.addEventListener("resize", render);
+  start();
+</script>
+</body>
+</html>

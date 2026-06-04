@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Peri Melodisi 🧚</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; }
+  body {
+    font-family:'Comic Sans MS','Segoe UI',sans-serif;
+    min-height:100vh; min-height:100dvh;
+    background:linear-gradient(160deg,#1c0f3d 0%,#4a2d7a 55%,#9b59b6 100%);
+    color:#fff; display:flex; flex-direction:column; align-items:center; padding:12px;
+  }
+  .home-btn { position:fixed; top:10px; left:12px; z-index:8; border-radius:16px; padding:10px 16px;
+    font-size:1.05rem; font-weight:bold; background:rgba(255,255,255,.92); color:#6b4a8a;
+    box-shadow:0 4px 12px rgba(0,0,0,.2); text-decoration:none; font-family:inherit; }
+  h1 { font-size:clamp(1.3rem,4.5vw,2rem); margin:42px 0 4px; text-shadow:0 3px 10px rgba(0,0,0,.4); }
+  .sub { font-size:.95rem; opacity:.9; margin-bottom:14px; text-align:center; }
+  .hud { display:flex; gap:10px; margin-bottom:18px; }
+  .hud div { background:rgba(255,255,255,.18); border-radius:14px; padding:8px 16px; font-weight:bold; }
+  .orbs { display:grid; grid-template-columns:repeat(2, minmax(120px, 160px)); gap:18px; }
+  .orb {
+    aspect-ratio:1; border-radius:50%; cursor:pointer; border:none;
+    display:flex; align-items:center; justify-content:center; font-size:3rem;
+    box-shadow:0 8px 22px rgba(0,0,0,.35), inset 0 -8px 18px rgba(0,0,0,.25);
+    transition:transform .12s, filter .12s, box-shadow .12s;
+    filter:brightness(.6) saturate(.8);
+  }
+  .orb:active { transform:scale(.93); }
+  .orb.lit { filter:brightness(1.25) saturate(1.3); transform:scale(1.08);
+    box-shadow:0 0 40px 6px var(--glow), inset 0 -8px 18px rgba(0,0,0,.15); }
+  .o0 { background:radial-gradient(circle at 35% 30%, #ff9ec4, #e84393); --glow:#ff9ec4; }
+  .o1 { background:radial-gradient(circle at 35% 30%, #8ecdf7, #2980d9); --glow:#8ecdf7; }
+  .o2 { background:radial-gradient(circle at 35% 30%, #ffe28a, #f0a500); --glow:#ffe28a; }
+  .o3 { background:radial-gradient(circle at 35% 30%, #a2f0b8, #27ae60); --glow:#a2f0b8; }
+  #status { margin-top:18px; font-size:1.15rem; font-weight:bold; min-height:1.6em; text-align:center; }
+  #startBtn {
+    margin-top:14px; border:none; border-radius:18px; padding:14px 36px;
+    font-family:inherit; font-size:1.2rem; font-weight:bold; cursor:pointer;
+    background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00;
+    box-shadow:0 6px 18px rgba(255,180,60,.45);
+  }
+  #startBtn:active { transform:scale(.94); }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+<h1>🧚 Peri Melodisi</h1>
+<div class="sub">Perilerin yaktığı ışıkları aynı sırayla tekrarla!</div>
+<div class="hud">
+  <div>🎵 Seviye: <span id="level">0</span></div>
+  <div>🏆 Rekor: <span id="best">0</span></div>
+</div>
+<div class="orbs">
+  <button class="orb o0" data-i="0">🧚</button>
+  <button class="orb o1" data-i="1">⭐</button>
+  <button class="orb o2" data-i="2">🌙</button>
+  <button class="orb o3" data-i="3">💖</button>
+</div>
+<div id="status">Başlamak için butona dokun! 👇</div>
+<button id="startBtn">▶️ Başla</button>
+<script>
+  const FREQS = [523.25, 659.25, 783.99, 987.77]; // C5 E5 G5 B5
+  let seq = [], idx = 0, level = 0, best = 0, accepting = false, audio = null;
+
+  try { best = +localStorage.getItem("periBest") || 0; } catch(e) {}
+  document.getElementById("best").textContent = best;
+
+  const orbs = [...document.querySelectorAll(".orb")];
+  const status = document.getElementById("status");
+
+  function tone(i, dur = 0.32) {
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = "sine"; o.frequency.value = FREQS[i];
+      g.gain.setValueAtTime(0.0001, audio.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.35, audio.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + dur);
+      o.connect(g); g.connect(audio.destination);
+      o.start(); o.stop(audio.currentTime + dur + 0.05);
+    } catch(e) {}
+  }
+
+  function light(i, ms = 420) {
+    orbs[i].classList.add("lit");
+    tone(i);
+    setTimeout(() => orbs[i].classList.remove("lit"), ms);
+  }
+
+  async function playSeq() {
+    accepting = false;
+    status.textContent = "👀 İzle...";
+    await wait(700);
+    const gap = Math.max(280, 650 - level * 25);
+    for (const i of seq) { light(i, gap * 0.7); await wait(gap); }
+    status.textContent = "🎵 Şimdi sen!";
+    idx = 0; accepting = true;
+  }
+
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+
+  function next() {
+    seq.push(Math.floor(Math.random() * 4));
+    level = seq.length;
+    document.getElementById("level").textContent = level;
+    playSeq();
+  }
+
+  orbs.forEach(o => o.onclick = () => {
+    if (!accepting) return;
+    const i = +o.dataset.i;
+    light(i, 250);
+    if (i === seq[idx]) {
+      idx++;
+      if (idx === seq.length) {
+        accepting = false;
+        status.textContent = "✨ Doğru! Devam...";
+        setTimeout(next, 900);
+      }
+    } else {
+      accepting = false;
+      // hata sesi
+      try { tone(0, 0.1); } catch(e) {}
+      if (level - 1 > best) {
+        best = level - 1;
+        try { localStorage.setItem("periBest", best); } catch(e) {}
+        document.getElementById("best").textContent = best;
+        status.textContent = `💫 Yanlış ama YENİ REKOR: ${best}! Tekrar dene Eylül!`;
+      } else {
+        status.textContent = `💔 Yanlış oldu! ${level}. seviyeye ulaştın. Tekrar dene!`;
+      }
+      document.getElementById("startBtn").style.display = "inline-block";
+    }
+  });
+
+  document.getElementById("startBtn").onclick = function() {
+    this.style.display = "none";
+    seq = []; level = 0;
+    next();
+  };
+</script>
+</body>
+</html>

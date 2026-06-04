@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Eylül'ün Boyama Dünyası 🎨</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Comic Sans MS', 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(160deg, #ffe5f1 0%, #e3f0ff 50%, #fff6d9 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px;
+    color: #6b4a8a;
+  }
+
+  h1 {
+    font-size: clamp(1.3rem, 5vw, 2.1rem);
+    margin: 44px 0 2px;
+    text-align: center;
+    color: #a14ec9;
+    text-shadow: 2px 2px 0 #ffd9f0;
+  }
+  .subtitle { font-size: .95rem; margin-bottom: 12px; text-align: center; }
+
+  /* resim seçici */
+  .pictures { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; justify-content: center; }
+  .pictures button {
+    border: 3px solid transparent;
+    border-radius: 16px;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 1.3rem;
+    cursor: pointer;
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(160,80,200,.15);
+    transition: transform .15s;
+  }
+  .pictures button:hover { transform: scale(1.1); }
+  .pictures button.active { border-color: #a14ec9; background: #f3e0ff; }
+
+  .workspace {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    max-width: 760px;
+  }
+
+  /* palet */
+  .palette {
+    display: grid;
+    grid-template-columns: repeat(2, 44px);
+    gap: 8px;
+    background: #fff;
+    padding: 12px;
+    border-radius: 20px;
+    box-shadow: 0 6px 16px rgba(160,80,200,.18);
+  }
+  .swatch {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+    transition: transform .15s;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.active { border-color: #6b4a8a; transform: scale(1.18); }
+  .swatch.rainbow {
+    background: conic-gradient(red, orange, yellow, green, cyan, blue, violet, red);
+  }
+  .swatch.eraser { background: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+
+  /* tuval */
+  .canvas-box {
+    background: #fff;
+    border-radius: 20px;
+    padding: 10px;
+    box-shadow: 0 6px 16px rgba(160,80,200,.18);
+    width: min(88vw, 480px);
+  }
+  svg { width: 100%; height: auto; display: block; }
+  svg .col { cursor: pointer; transition: fill .2s; }
+  svg .col:hover { opacity: .85; }
+
+  .actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+  .actions button {
+    border: none;
+    border-radius: 14px;
+    padding: 10px 20px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    transition: transform .15s;
+  }
+  .actions button:hover { transform: scale(1.07); }
+  .btn-reset { background: linear-gradient(135deg, #ff9a9e, #ff6f91); }
+  .btn-save { background: linear-gradient(135deg, #84d9a1, #4ec98a); }
+  .btn-magic { background: linear-gradient(135deg, #b06ce0, #8a4ec9); }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #6b4a8a;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 16px;
+    font-weight: bold;
+    transition: transform .35s;
+    z-index: 5;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  * { -webkit-user-select:none; user-select:none; touch-action:manipulation; }
+  .home-btn { position:fixed; top:10px; left:12px; z-index:8; border-radius:16px; padding:10px 16px;
+    font-family:inherit; font-size:1.1rem; font-weight:bold; background:rgba(255,255,255,.92);
+    color:#6b4a8a; box-shadow:0 4px 12px rgba(0,0,0,.2); text-decoration:none; }
+</style>
+</head>
+<body>
+<a class="home-btn" href="index.html">🏠 Menü</a>
+
+<h1>🎨 Eylül'ün Boyama Dünyası 🎨</h1>
+<div class="subtitle">Bir renk seç, resmin üzerine tıkla! ✨</div>
+
+<div class="pictures" id="pictures">
+  <button data-pic="unicorn" class="active" title="Unicorn">🦄</button>
+  <button data-pic="rocket" title="Roket">🚀</button>
+  <button data-pic="castle" title="Şato">🏰</button>
+  <button data-pic="butterfly" title="Kelebek">🦋</button>
+</div>
+
+<div class="workspace">
+  <div class="palette" id="palette"></div>
+  <div>
+    <div class="canvas-box" id="canvasBox"></div>
+    <div class="actions">
+      <button class="btn-magic" onclick="magicColor()">🪄 Sihirli Boya</button>
+      <button class="btn-reset" onclick="resetPic()">🧽 Temizle</button>
+      <button class="btn-save" onclick="savePng()">💾 Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const COLORS = [
+    "#ff5c8a","#ff9a3d","#ffd93d","#7ed957",
+    "#4ecdc4","#5b9df9","#9b6cf0","#f78fb3",
+    "#a0522d","#444444","#ffffff","#ffe0bd"
+  ];
+  let currentColor = COLORS[0];
+  let mode = "paint"; // paint | rainbow | eraser
+
+  const PICS = {
+    unicorn: `
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect class="col" x="0" y="0" width="400" height="400" fill="#fff" rx="12"/>
+      <!-- gövde -->
+      <ellipse class="col" cx="200" cy="250" rx="95" ry="65" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- bacaklar -->
+      <rect class="col" x="135" y="290" width="24" height="70" rx="10" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <rect class="col" x="240" y="290" width="24" height="70" rx="10" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- boyun + kafa -->
+      <ellipse class="col" cx="285" cy="160" rx="48" ry="40" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- boynuz -->
+      <polygon class="col" points="300,128 318,60 326,130" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- kulak -->
+      <polygon class="col" points="258,128 268,98 282,126" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- yele -->
+      <path class="col" d="M250 135 Q225 150 235 185 Q210 195 225 225 Q200 235 215 260 L245 240 Q235 215 255 200 Q245 175 265 165 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- kuyruk -->
+      <path class="col" d="M110 235 Q60 240 70 290 Q85 270 100 280 Q95 255 115 260 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- göz -->
+      <circle cx="298" cy="155" r="6" fill="#6b4a8a"/>
+      <!-- yıldızlar -->
+      <path class="col" d="M80 80 L88 100 L110 102 L93 116 L99 138 L80 125 L61 138 L67 116 L50 102 L72 100 Z" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <path class="col" d="M330 300 L336 315 L352 316 L340 327 L344 343 L330 334 L316 343 L320 327 L308 316 L324 315 Z" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+    </svg>`,
+    rocket: `
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect class="col" x="0" y="0" width="400" height="400" fill="#fff" rx="12"/>
+      <!-- roket gövdesi -->
+      <path class="col" d="M200 40 Q260 110 255 230 L145 230 Q140 110 200 40 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- pencere -->
+      <circle class="col" cx="200" cy="140" r="32" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <circle class="col" cx="200" cy="140" r="18" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <!-- kanatlar -->
+      <path class="col" d="M145 180 Q90 215 95 280 L145 245 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <path class="col" d="M255 180 Q310 215 305 280 L255 245 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- alev -->
+      <path class="col" d="M170 232 Q200 320 230 232 Q215 260 200 245 Q185 260 170 232 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- gezegen -->
+      <circle class="col" cx="85" cy="90" r="38" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <ellipse class="col" cx="85" cy="90" rx="55" ry="14" fill="none" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- ay -->
+      <path class="col" d="M330 70 A30 30 0 1 0 345 125 A24 24 0 1 1 330 70 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- yıldız -->
+      <path class="col" d="M320 320 L327 338 L346 339 L332 352 L336 370 L320 359 L304 370 L308 352 L294 339 L313 338 Z" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+    </svg>`,
+    castle: `
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect class="col" x="0" y="0" width="400" height="400" fill="#fff" rx="12"/>
+      <!-- ana gövde -->
+      <rect class="col" x="120" y="180" width="160" height="160" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- kapı -->
+      <path class="col" d="M175 340 L175 280 Q200 255 225 280 L225 340 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- sol kule -->
+      <rect class="col" x="80" y="150" width="55" height="190" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <polygon class="col" points="75,150 140,150 107,85" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- sağ kule -->
+      <rect class="col" x="265" y="150" width="55" height="190" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <polygon class="col" points="260,150 325,150 292,85" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- orta kule -->
+      <rect class="col" x="170" y="110" width="60" height="70" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <polygon class="col" points="165,110 235,110 200,45" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- bayrak -->
+      <line x1="200" y1="45" x2="200" y2="15" stroke="#6b4a8a" stroke-width="4"/>
+      <polygon class="col" points="200,15 240,25 200,38" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <!-- pencereler -->
+      <circle class="col" cx="107" cy="200" r="12" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <circle class="col" cx="292" cy="200" r="12" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <circle class="col" cx="200" cy="145" r="12" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <!-- güneş -->
+      <circle class="col" cx="345" cy="50" r="28" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- bulut -->
+      <path class="col" d="M30 70 Q30 50 50 50 Q55 32 75 38 Q95 30 100 50 Q120 52 115 70 Z" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+    </svg>`,
+    butterfly: `
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <rect class="col" x="0" y="0" width="400" height="400" fill="#fff" rx="12"/>
+      <!-- sol üst kanat -->
+      <path class="col" d="M190 190 Q90 60 60 120 Q40 180 185 205 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- sağ üst kanat -->
+      <path class="col" d="M210 190 Q310 60 340 120 Q360 180 215 205 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- sol alt kanat -->
+      <path class="col" d="M188 215 Q80 260 100 320 Q130 365 195 230 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- sağ alt kanat -->
+      <path class="col" d="M212 215 Q320 260 300 320 Q270 365 205 230 Z" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- kanat benekleri -->
+      <circle class="col" cx="120" cy="130" r="18" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <circle class="col" cx="280" cy="130" r="18" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <circle class="col" cx="140" cy="290" r="14" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <circle class="col" cx="260" cy="290" r="14" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      <!-- gövde -->
+      <ellipse class="col" cx="200" cy="215" rx="16" ry="55" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- kafa -->
+      <circle class="col" cx="200" cy="145" r="20" fill="#fff" stroke="#6b4a8a" stroke-width="4"/>
+      <!-- antenler -->
+      <path d="M192 130 Q175 100 160 95" fill="none" stroke="#6b4a8a" stroke-width="4" stroke-linecap="round"/>
+      <path d="M208 130 Q225 100 240 95" fill="none" stroke="#6b4a8a" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="158" cy="93" r="6" fill="#6b4a8a"/>
+      <circle cx="242" cy="93" r="6" fill="#6b4a8a"/>
+      <!-- gözler -->
+      <circle cx="193" cy="142" r="4" fill="#6b4a8a"/>
+      <circle cx="207" cy="142" r="4" fill="#6b4a8a"/>
+      <!-- çiçek -->
+      <g>
+        <circle class="col" cx="60" cy="340" r="12" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+        <circle class="col" cx="42" cy="328" r="10" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+        <circle class="col" cx="78" cy="328" r="10" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+        <circle class="col" cx="48" cy="352" r="10" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+        <circle class="col" cx="72" cy="352" r="10" fill="#fff" stroke="#6b4a8a" stroke-width="3"/>
+      </g>
+    </svg>`
+  };
+
+  // palet oluştur
+  const palette = document.getElementById("palette");
+  COLORS.forEach((c, i) => {
+    const s = document.createElement("div");
+    s.className = "swatch" + (i === 0 ? " active" : "");
+    s.style.background = c;
+    s.onclick = () => selectSwatch(s, "paint", c);
+    palette.appendChild(s);
+  });
+  // gökkuşağı boyası
+  const rb = document.createElement("div");
+  rb.className = "swatch rainbow";
+  rb.title = "Gökkuşağı boyası";
+  rb.onclick = () => selectSwatch(rb, "rainbow");
+  palette.appendChild(rb);
+  // silgi
+  const er = document.createElement("div");
+  er.className = "swatch eraser";
+  er.textContent = "🧽";
+  er.title = "Silgi";
+  er.onclick = () => selectSwatch(er, "eraser");
+  palette.appendChild(er);
+
+  function selectSwatch(el, m, color) {
+    document.querySelector(".swatch.active")?.classList.remove("active");
+    el.classList.add("active");
+    mode = m;
+    if (color) currentColor = color;
+  }
+
+  function randomColor() {
+    return `hsl(${Math.floor(Math.random()*360)}, 85%, 65%)`;
+  }
+
+  let currentPic = "unicorn";
+  const box = document.getElementById("canvasBox");
+
+  function loadPic(name) {
+    currentPic = name;
+    box.innerHTML = PICS[name];
+    box.querySelectorAll(".col").forEach(el => {
+      el.addEventListener("click", () => {
+        if (mode === "eraser") el.setAttribute("fill", "#fff");
+        else if (mode === "rainbow") el.setAttribute("fill", randomColor());
+        else el.setAttribute("fill", currentColor);
+      });
+    });
+  }
+
+  document.querySelectorAll("#pictures button").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelector("#pictures .active").classList.remove("active");
+      btn.classList.add("active");
+      loadPic(btn.dataset.pic);
+    };
+  });
+
+  function resetPic() { loadPic(currentPic); toast("Tertemiz! Yeniden boya 🎨"); }
+
+  function magicColor() {
+    box.querySelectorAll(".col").forEach(el => el.setAttribute("fill", randomColor()));
+    toast("Sihir tamamlandı! 🪄✨");
+  }
+
+  function savePng() {
+    const svg = box.querySelector("svg");
+    const data = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([data], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 800; canvas.height = 800;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, 800, 800);
+      ctx.drawImage(img, 0, 0, 800, 800);
+      URL.revokeObjectURL(url);
+      const a = document.createElement("a");
+      a.download = "eylul-boyama-" + currentPic + ".png";
+      a.href = canvas.toDataURL("image/png");
+      a.click();
+      toast("Resmin kaydedildi! 💾🌟");
+    };
+    img.src = url;
+  }
+
+  function toast(msg) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove("show"), 2200);
+  }
+
+  loadPic("unicorn");
+</script>
+</body>
+</html>
