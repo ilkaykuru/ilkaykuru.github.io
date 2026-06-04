@@ -180,6 +180,37 @@
     cursor:pointer; background:#ece3f7; color:#3b2660; }
   .gram-chips button.ok { background:#7ed957; color:#0b3d10; }
   .gram-chips button.no { background:#ef9a9a; color:#5d1010; }
+
+  /* v5: pratik seansı + yolculuk */
+  .ses-top { display:flex; align-items:center; gap:10px; width:100%; margin-top:8px; }
+  .ses-top .pbar { flex:1; }
+  .ses-hearts { font-size:1rem; letter-spacing:1px; }
+  #sesPrompt { background:rgba(255,255,255,.96); color:#3b2660; border-radius:20px; padding:20px;
+    width:100%; text-align:center; margin-top:12px; box-shadow:0 10px 24px rgba(0,0,0,.3); }
+  #sesPrompt .big { font-size:2.4rem; font-weight:bold; }
+  #sesPrompt .small { font-size:.85rem; color:#8a5cb8; font-weight:bold; margin-top:4px; }
+  #sesOpts { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-top:12px; }
+  #sesOpts .q-opt.big-letter { font-size:1.9rem; padding:18px 8px; }
+  #sesFeedback { position:fixed; left:0; right:0; bottom:0; padding:14px 18px calc(14px + env(safe-area-inset-bottom));
+    display:none; z-index:45; box-shadow:0 -6px 20px rgba(0,0,0,.35); }
+  #sesFeedback.show { display:flex; align-items:center; gap:12px; justify-content:space-between; }
+  #sesFeedback.good { background:#d7f5cf; color:#0b3d10; }
+  #sesFeedback.bad { background:#ffd6d6; color:#5d1010; }
+  #sesFeedback .fb-txt { font-weight:bold; font-size:1rem; }
+  #sesFeedback button { border:none; border-radius:13px; padding:12px 26px; font-weight:bold; font-size:1rem; cursor:pointer; }
+  #sesFeedback.good button { background:#4ec98a; color:#fff; }
+  #sesFeedback.bad button { background:#e57373; color:#fff; }
+  .mascot { font-size:3.4rem; animation:mbounce 1.2s infinite alternate; }
+  @keyframes mbounce { from{transform:translateY(0)} to{transform:translateY(-8px)} }
+  .path { display:flex; flex-direction:column; align-items:center; gap:0; width:100%; margin-top:8px; }
+  .pnode { display:flex; align-items:center; gap:12px; width:100%; max-width:380px; padding:9px 12px;
+    background:rgba(255,255,255,.12); border-radius:16px; margin-bottom:8px; cursor:pointer; }
+  .pnode.locked { opacity:.42; }
+  .pnode.current { border:2px solid #ffd93d; background:rgba(255,217,61,.18); }
+  .pnode .pico { font-size:1.6rem; width:42px; text-align:center; }
+  .pnode .ptxt { flex:1; font-size:.88rem; font-weight:bold; }
+  .pnode .ptxt span { display:block; font-size:.7rem; opacity:.75; font-weight:normal; }
+  .pnode .pst { font-size:1.2rem; }
 </style>
 </head>
 <body>
@@ -216,6 +247,8 @@
     <div class="mod" data-go="guide"><span class="ico">📚</span><h3>Başlangıç Rehberi</h3><p>Hangul nasıl çalışır? Önce oku!</p></div>
     <div class="mod" data-go="okuma"><span class="ico">🔤</span><h3>Okuma Koşusu</h3><p>Heceleri okuma antrenmanı</p></div>
     <div class="mod" data-go="gramer"><span class="ico">🧩</span><h3>Cümle Sırları</h3><p>Mini dilbilgisi dersleri</p></div>
+    <div class="mod" data-go="session" style="border-color:rgba(255,217,61,.65);background:rgba(255,217,61,.16)"><span class="ico">🐯</span><h3>Pratik Seansı</h3><p>Karma alıştırma · kalpli!</p></div>
+    <div class="mod" data-go="path"><span class="ico">🗺️</span><h3>Yolculuk</h3><p>Öğrenme haritan</p></div>
   </div>
   <div id="nextStep">🎓 ...</div>
   <div id="wotd" style="width:100%;background:rgba(255,255,255,.15);border-radius:16px;padding:12px 14px;margin-top:4px;text-align:center;cursor:pointer">
@@ -390,6 +423,24 @@
 <!-- CÜMLE SIRLARI -->
 <div class="page" id="gramer"><div class="sent-list" id="gramList"></div></div>
 <div class="page" id="gramPlay"><div class="guide-box" id="gramBox"></div></div>
+
+<!-- PRATIK SEANSI -->
+<div class="page" id="session">
+  <div class="ses-top">
+    <div class="pbar" style="height:14px"><div id="sesBar" style="width:0%"></div></div>
+    <span class="ses-hearts" id="sesHearts">❤️❤️❤️</span>
+  </div>
+  <div id="sesPrompt"></div>
+  <div id="sesOpts"></div>
+  <div class="match-grid" id="sesPairs" style="display:none"></div>
+</div>
+<div id="sesFeedback">
+  <span class="fb-txt" id="fbTxt"></span>
+  <button id="fbNext">Devam</button>
+</div>
+
+<!-- YOLCULUK -->
+<div class="page" id="path"><div class="path" id="pathList"></div></div>
 
 <div class="screen" id="resultScreen">
   <h2 id="resTitle"></h2>
@@ -1590,6 +1641,239 @@ go = function(p, push) {
 };
 Object.assign(TITLES, { guide:"📚 Başlangıç Rehberi", okuma:"🔤 Okuma Koşusu",
   gramer:"🧩 Cümle Sırları", gramPlay:"🧩 Cümle Sırrı" });
+document.querySelectorAll(".mod[data-go]").forEach(m => { m.onclick = () => go(m.dataset.go); });
+
+
+
+/* ================= v5: PRATIK SEANSI (Duolingo tarzi) + YOLCULUK ================= */
+function learnedLetters() {
+  const out = [];
+  LESSONS.forEach((ls, i) => { if (S.lessonsDone[i]) out.push(...ls.letters); });
+  if (out.length < 5) out.push(...LESSONS[0].letters, ...LESSONS[3].letters);
+  return out;
+}
+function learnedWords() {
+  const out = [];
+  DECKS.forEach(d => d.words.forEach(w => { if (getSrs(wordKey(d.id, w[0])).box > 0) out.push(w); }));
+  if (out.length < 8) out.push(...DECKS[0].words);
+  return out;
+}
+function letterSound(L) {
+  // ünsüz ise +ㅏ hecesi, ünlü ise ㅇ+ünlü hecesi
+  const ci = CHO.indexOf(L.ch);
+  if (ci >= 0) return compose(ci, 0, "");
+  const vi = JUNG.indexOf(L.ch);
+  if (vi >= 0) return compose(11, vi, "");
+  return L.ex[0];
+}
+const pickN = (arr, n, notFn) => {
+  const pool = arr.filter(x => !notFn || !notFn(x));
+  const out = [];
+  const used = new Set();
+  let guard = 0;
+  while (out.length < n && guard++ < 200) {
+    const x = pool[Math.floor(Math.random()*pool.length)];
+    const k = JSON.stringify(x);
+    if (!used.has(k)) { used.add(k); out.push(x); }
+  }
+  return out;
+};
+
+let SES = null;
+function startSession() {
+  const letters = learnedLetters();
+  const words = learnedWords();
+  const tasks = [];
+  const types = ["s2l","l2r","pairs","wlisten","wtr","s2l","l2r","wlisten","pairs","wtr","s2l","wlisten"];
+  types.forEach(tp => {
+    if (tp === "s2l") {
+      const L = letters[Math.floor(Math.random()*letters.length)];
+      tasks.push({ tp, L, opts: pickN(letters, 3, x => x.ch === L.ch).concat([L]).sort(() => Math.random()-.5) });
+    } else if (tp === "l2r") {
+      const L = letters[Math.floor(Math.random()*letters.length)];
+      tasks.push({ tp, L, opts: pickN(letters, 3, x => x.rom === L.rom).concat([L]).sort(() => Math.random()-.5) });
+    } else if (tp === "pairs") {
+      tasks.push({ tp, pairs: pickN(letters, 3) });
+    } else if (tp === "wlisten") {
+      const w = words[Math.floor(Math.random()*words.length)];
+      tasks.push({ tp, w, opts: pickN(words, 3, x => x[0] === w[0]).concat([w]).sort(() => Math.random()-.5) });
+    } else {
+      const w = words[Math.floor(Math.random()*words.length)];
+      tasks.push({ tp, w, opts: pickN(words, 3, x => x[2] === w[2]).concat([w]).sort(() => Math.random()-.5) });
+    }
+  });
+  SES = { tasks, i:0, hearts:3, correct:0, combo:0, maxCombo:0, done:false };
+  renderSes();
+}
+window._ses = () => SES;
+
+function sesHud() {
+  document.getElementById("sesBar").style.width = (SES.i / SES.tasks.length * 100) + "%";
+  document.getElementById("sesHearts").textContent = "❤️".repeat(SES.hearts) + "🖤".repeat(3 - SES.hearts);
+}
+function renderSes() {
+  sesHud();
+  hideFb();
+  const t = SES.tasks[SES.i];
+  const P = document.getElementById("sesPrompt");
+  const O = document.getElementById("sesOpts");
+  const PR = document.getElementById("sesPairs");
+  O.style.display = "grid"; PR.style.display = "none"; O.innerHTML = "";
+  if (t.tp === "s2l") {
+    const syl = letterSound(t.L);
+    P.innerHTML = `<div class="big">🎧</div><div class="small">Hangi harfin sesi? Dinle!</div>
+      <button class="speak-chip" id="sesPlay" style="margin-top:8px">🔊</button>`;
+    document.getElementById("sesPlay").onclick = () => speak(syl, 0.7);
+    setTimeout(() => speak(syl, 0.7), 350);
+    t.opts.forEach(o => addOpt(O, o.ch, o.ch === t.L.ch, `${t.L.ch} = ${t.L.rom}`, true));
+  } else if (t.tp === "l2r") {
+    P.innerHTML = `<div class="big">${t.L.ch}</div><div class="small">Bu harf hangi sesi çıkarır?</div>`;
+    t.opts.forEach(o => addOpt(O, o.rom + " — " + o.hint, o.ch === t.L.ch, `${t.L.ch} = ${t.L.rom}`));
+  } else if (t.tp === "pairs") {
+    P.innerHTML = `<div class="small">Harfleri sesleriyle eşleştir! (3 çift)</div>`;
+    O.style.display = "none";
+    renderSesPairs(t);
+    return;
+  } else if (t.tp === "wlisten") {
+    P.innerHTML = `<div class="big">🎧</div><div class="small">Hangi kelimeyi duydun?</div>
+      <button class="speak-chip" id="sesPlay" style="margin-top:8px">🔊</button>`;
+    document.getElementById("sesPlay").onclick = () => speak(t.w[0]);
+    setTimeout(() => speak(t.w[0]), 350);
+    t.opts.forEach(o => addOpt(O, `${o[0]}<br><span style="font-size:.7rem;opacity:.6">${o[2]}</span>`, o[0] === t.w[0], `${t.w[0]} = ${t.w[2]}`));
+  } else {
+    P.innerHTML = `<div class="big" style="font-size:1.8rem">${t.w[0]}</div><div class="small">${t.w[1]} — Türkçesi hangisi?</div>`;
+    t.opts.forEach(o => addOpt(O, o[2], o[2] === t.w[2], `${t.w[0]} = ${t.w[2]}`));
+  }
+}
+function addOpt(box, html, isCorrect, answerTxt, bigLetter) {
+  const b = document.createElement("button");
+  b.className = "q-opt" + (bigLetter ? " big-letter" : "");
+  b.innerHTML = html;
+  b.onclick = () => {
+    [...box.children].forEach(x => x.style.pointerEvents = "none");
+    if (isCorrect) { b.classList.add("ok"); sesAnswer(true, answerTxt); }
+    else {
+      b.classList.add("no");
+      [...box.children].forEach(x => { if ((x._ok)) x.classList.add("ok"); });
+      sesAnswer(false, answerTxt);
+    }
+  };
+  b._ok = isCorrect;
+  box.appendChild(b);
+}
+function renderSesPairs(t) {
+  const PR = document.getElementById("sesPairs");
+  PR.style.display = "grid"; PR.innerHTML = "";
+  const items = [];
+  t.pairs.forEach((L, i) => {
+    items.push({ id:i, side:"ch", label:L.ch, syl:letterSound(L) });
+    items.push({ id:i, side:"rom", label:L.rom });
+  });
+  items.sort(() => Math.random()-.5);
+  let sel = null, found = 0, wrongs = 0;
+  items.forEach((it, idx) => {
+    const b = document.createElement("button");
+    b.className = "m-item";
+    b.style.fontSize = it.side === "ch" ? "1.5rem" : "1rem";
+    b.textContent = it.label;
+    b.onclick = () => {
+      if (it.side === "ch") speak(it.syl, 0.75);
+      if (sel === null) { sel = { idx, b, it }; b.classList.add("sel"); return; }
+      if (sel.idx === idx) { b.classList.remove("sel"); sel = null; return; }
+      if (sel.it.id === it.id && sel.it.side !== it.side) {
+        b.classList.add("gone"); sel.b.classList.add("gone"); sel.b.classList.remove("sel");
+        sel = null; found++;
+        if (found === 3) sesAnswer(wrongs <= 1, t.pairs.map(L => L.ch + "=" + L.rom).join(" · "));
+      } else {
+        wrongs++;
+        b.classList.add("no"); sel.b.classList.add("no");
+        const a = sel.b; sel = null;
+        setTimeout(() => { b.classList.remove("no"); a.classList.remove("no","sel"); }, 450);
+      }
+    };
+    PR.appendChild(b);
+  });
+}
+function sesAnswer(ok, answerTxt) {
+  if (ok) { SES.correct++; SES.combo++; SES.maxCombo = Math.max(SES.maxCombo, SES.combo); }
+  else { SES.combo = 0; SES.hearts--; }
+  sesHud();
+  const fb = document.getElementById("sesFeedback");
+  fb.className = "show " + (ok ? "good" : "bad");
+  document.getElementById("fbTxt").textContent = ok
+    ? (SES.combo >= 3 ? `🔥 ${SES.combo} COMBO! Süpersin!` : "✅ Doğru!")
+    : "❌ Doğrusu: " + answerTxt;
+  document.getElementById("fbNext").onclick = () => {
+    hideFb();
+    if (SES.hearts <= 0) { endSession(false); return; }
+    SES.i++;
+    if (SES.i >= SES.tasks.length) endSession(true);
+    else renderSes();
+  };
+}
+function hideFb() { document.getElementById("sesFeedback").className = ""; }
+function endSession(finished) {
+  SES.done = true;
+  const xp = SES.correct * 4 + SES.maxCombo * 2 + (finished ? SES.hearts * 5 : 0);
+  addXp(Math.max(2, xp));
+  if (!S.sessions) S.sessions = 0;
+  S.sessions++; save();
+  const msg = finished
+    ? (SES.correct >= 11 ? "Mükemmel bir seans! Hodu gururlu! 🐯" : SES.correct >= 8 ? "Çok iyi gidiyorsun! 🐯" : "Pratik mükemmelleştirir! 🐯")
+    : "Kalpler bitti ama pes yok! Hodu seninle! 🐯";
+  document.getElementById("resTitle").innerHTML = `<span class="mascot">🐯</span><br>` + (finished ? "Seans Bitti!" : "Bir Dahaki Sefere!");
+  document.getElementById("resMsg").textContent = `${SES.correct}/${SES.tasks.length} doğru · en uzun combo ${SES.maxCombo} · +${Math.max(2,xp)} XP — ${msg}`;
+  document.getElementById("resultScreen").classList.add("show");
+  document.getElementById("resBtn").onclick = () => {
+    document.getElementById("resultScreen").classList.remove("show");
+    go("home", false);
+  };
+}
+
+/* ---------- YOLCULUK ---------- */
+function pathNodes() {
+  const nodes = [];
+  nodes.push({ ico:"📚", txt:"Başlangıç Rehberi", sub:"Hangul nasıl çalışır?", done:!!S.guideRead, go:"guide" });
+  LESSONS.forEach((ls, i) => {
+    nodes.push({ ico:"📖", txt:ls.name, sub:ls.letters.map(l=>l.ch).join(" "), done:!!S.lessonsDone[i],
+      locked: !(i === 0 || S.lessonsDone[i-1]), go:"hangul" });
+  });
+  nodes.push({ ico:"🔤", txt:"Okuma Koşusu", sub:"Hece okuma antrenmanı", done:(S.okumaCount||0) >= 3, go:"okuma" });
+  DECKS.forEach(d => {
+    const learned = d.words.filter(w => getSrs(wordKey(d.id, w[0])).box >= 2).length;
+    nodes.push({ ico:d.ico, txt:d.name + " destesi", sub:learned + "/" + d.words.length + " kelime",
+      done: learned === d.words.length, go:"decks" });
+  });
+  const gramDone = Object.keys(S.gramDone||{}).filter(k => S.gramDone[k]).length;
+  nodes.push({ ico:"🧩", txt:"Cümle Sırları", sub:gramDone + "/" + GRAM.length + " ders", done:gramDone === GRAM.length, go:"gramer" });
+  const sentDone = Object.keys(S.sentDone||{}).filter(k => S.sentDone[k]).length;
+  nodes.push({ ico:"🧱", txt:"Cümle Kurucu", sub:sentDone + "/" + SENTENCES.length + " cümle", done:sentDone === SENTENCES.length, go:"sentences" });
+  nodes.push({ ico:"👑", txt:"Korece Kahramanı!", sub:"Tüm yolu bitir", done:false, locked:true, go:"home" });
+  return nodes;
+}
+function renderPath() {
+  const box = document.getElementById("pathList"); box.innerHTML = "";
+  let currentSet = false;
+  pathNodes().forEach(n => {
+    const d = document.createElement("div");
+    let cls = "pnode";
+    if (n.locked) cls += " locked";
+    else if (!n.done && !currentSet) { cls += " current"; currentSet = true; }
+    d.className = cls;
+    d.innerHTML = `<span class="pico">${n.ico}</span><span class="ptxt">${n.txt}<span>${n.sub}</span></span>
+      <span class="pst">${n.done ? "✅" : n.locked ? "🔒" : "▶️"}</span>`;
+    if (!n.locked) d.onclick = () => go(n.go);
+    box.appendChild(d);
+  });
+}
+
+const _origGo5 = go;
+go = function(p, push) {
+  _origGo5(p, push);
+  if (p === "session") startSession();
+  if (p === "path") renderPath();
+};
+Object.assign(TITLES, { session:"🐯 Pratik Seansı", path:"🗺️ Yolculuk" });
 document.querySelectorAll(".mod[data-go]").forEach(m => { m.onclick = () => go(m.dataset.go); });
 
 
