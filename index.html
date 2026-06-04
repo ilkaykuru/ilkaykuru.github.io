@@ -17,6 +17,7 @@
   }
   h1 { font-size:clamp(1.7rem,6vw,2.8rem); text-shadow:0 3px 14px rgba(0,0,0,.4); text-align:center; z-index:1; margin-top:10px; }
   .sub { font-size:1.05rem; opacity:.9; margin:6px 0 26px; z-index:1; text-align:center; }
+  .sub2 { font-size:1.05rem; opacity:.95; margin:30px 0 16px; z-index:1; text-align:center; font-weight:bold; }
   .grid {
     display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
     gap:16px; width:min(94vw,720px); z-index:1;
@@ -31,6 +32,7 @@
   a.card .ico { font-size:3rem; display:block; margin-bottom:8px; }
   a.card h2 { font-size:1.1rem; margin-bottom:4px; }
   a.card p { font-size:.8rem; opacity:.85; }
+  a.card.big { border-color:rgba(255,217,61,.55); background:rgba(255,217,61,.12); }
   .star { position:fixed; border-radius:50%; background:#fff; animation:tw 2s infinite alternate; pointer-events:none; z-index:0; }
   @keyframes tw { from{opacity:.15} to{opacity:.9} }
 </style>
@@ -48,7 +50,21 @@
   <a class="card" href="peri.html"><span class="ico">🧚</span><h2>Peri Melodisi</h2><p>Işıkları sırayla takip et!</p></a>
 </div>
 
-<div class="sub" style="margin:30px 0 16px">🌈 Büyük Maceralar — uzun oyunlar!</div>
+<div class="sub2">🌈 Büyük Maceralar — uzun oyunlar!</div>
 <div class="grid">
-  <a class="card" href="bahce.html"><span class="ico">🍬</span><h2>Büyü Bahçesi</h2><p>20 bölüm eşleştirme bulmacası!</p></a>
-  <a class="card" href="kale.html"><span class="ico">🏰</span><h2>Kristal Kale</h2><p
+  <a class="card big" href="bahce.html"><span class="ico">🍬</span><h2>Büyü Bahçesi</h2><p>20 bölüm eşleştirme bulmacası!</p></a>
+  <a class="card big" href="kale.html"><span class="ico">🏰</span><h2>Kristal Kale</h2><p>Kuleler kur, kaleyi koru!</p></a>
+  <a class="card big" href="macera.html"><span class="ico">🦄</span><h2>Unicorn Macerası</h2><p>Zıpla, elmas topla, bölüm geç!</p></a>
+  <a class="card big" href="dostum.html"><span class="ico">🐾</span><h2>Sevimli Dostum</h2><p>Sanal dostunu besle ve büyüt!</p></a>
+  <a class="card big" href="itmece.html"><span class="ico">📦</span><h2>Yıldız İtmece</h2><p>25 mantık bulmacası!</p></a>
+</div>
+<script>
+  for (let i=0;i<45;i++){
+    const s=document.createElement("div"); s.className="star";
+    const z=Math.random()*3+1;
+    s.style.cssText="width:"+z+"px;height:"+z+"px;left:"+(Math.random()*100)+"vw;top:"+(Math.random()*100)+"vh;animation-delay:"+(Math.random()*2)+"s";
+    document.body.appendChild(s);
+  }
+</script>
+</body>
+</html>
