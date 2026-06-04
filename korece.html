@@ -19,18 +19,23 @@
   .page.show { display:flex; }
 
   /* ana sayfa */
-  .stats { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:6px 0 14px; }
-  .stats div { background:rgba(255,255,255,.15); border-radius:12px; padding:7px 14px; font-weight:bold; font-size:.9rem; }
-  .modules { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; width:100%; }
-  .mod { background:rgba(255,255,255,.14); border:2px solid rgba(255,255,255,.3); border-radius:20px;
-    padding:18px 12px; text-align:center; cursor:pointer; transition:transform .15s; }
+  .level-box { width:100%; background:rgba(255,255,255,.13); border-radius:16px; padding:10px 14px; margin:6px 0; }
+  .level-box .row { display:flex; justify-content:space-between; font-size:.85rem; font-weight:bold; margin-bottom:5px; }
+  .pbar { height:10px; background:rgba(0,0,0,.3); border-radius:6px; overflow:hidden; }
+  .pbar div { height:100%; background:linear-gradient(90deg,#ffd93d,#ff9a3d); transition:width .4s; }
+  .pbar.green div { background:linear-gradient(90deg,#7ed957,#4ec98a); }
+  .stats { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:4px 0 10px; }
+  .stats div { background:rgba(255,255,255,.15); border-radius:12px; padding:7px 14px; font-weight:bold; font-size:.88rem; }
+  .modules { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:12px; width:100%; }
+  .mod { background:rgba(255,255,255,.14); border:2px solid rgba(255,255,255,.3); border-radius:18px;
+    padding:15px 10px; text-align:center; cursor:pointer; transition:transform .15s; }
   .mod:active { transform:scale(.94); }
-  .mod .ico { font-size:2.6rem; display:block; margin-bottom:6px; }
-  .mod h3 { font-size:1.02rem; margin-bottom:4px; }
-  .mod p { font-size:.75rem; opacity:.85; }
-  #ttsNote { font-size:.75rem; opacity:.8; margin-top:14px; text-align:center; max-width:420px; }
+  .mod .ico { font-size:2.3rem; display:block; margin-bottom:4px; }
+  .mod h3 { font-size:.95rem; margin-bottom:3px; }
+  .mod p { font-size:.72rem; opacity:.85; }
+  #ttsNote { font-size:.75rem; opacity:.8; margin-top:12px; text-align:center; max-width:420px; }
 
-  /* hangul dersleri */
+  /* hangul */
   .lesson-list { display:flex; flex-direction:column; gap:10px; width:100%; margin-top:8px; }
   .lesson-card { display:flex; align-items:center; gap:12px; background:rgba(255,255,255,.13); border-radius:16px;
     padding:12px 14px; cursor:pointer; }
@@ -39,8 +44,6 @@
   .lesson-card .info { flex:1; }
   .lesson-card .info b { font-size:.95rem; }
   .lesson-card .info span { display:block; font-size:.74rem; opacity:.8; }
-  .lesson-card .done { font-size:1.3rem; }
-
   .letters { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; width:100%; margin-top:8px; }
   .letter-card { background:rgba(255,255,255,.95); color:#3b2660; border-radius:16px; padding:12px; text-align:center; cursor:pointer; }
   .letter-card .glyph { font-size:2.6rem; font-weight:bold; }
@@ -50,25 +53,24 @@
   .gold-btn { margin-top:14px; border:none; border-radius:14px; padding:13px 28px; font-weight:bold; font-size:1.05rem;
     cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; box-shadow:0 6px 16px rgba(255,180,60,.4); }
 
-  /* hece fabrikası */
-  .factory { display:flex; flex-direction:column; align-items:center; gap:12px; width:100%; margin-top:8px; }
-  #sylOut { font-size:5rem; font-weight:bold; background:rgba(255,255,255,.95); color:#3b2660; border-radius:24px;
-    width:160px; height:160px; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  /* hece fabrikası + dikte */
+  .factory { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; margin-top:8px; }
+  .syl-big { font-size:4.4rem; font-weight:bold; background:rgba(255,255,255,.95); color:#3b2660; border-radius:22px;
+    width:140px; height:140px; display:flex; align-items:center; justify-content:center; cursor:pointer;
     box-shadow:0 10px 26px rgba(0,0,0,.35); }
-  #sylRom { font-size:1rem; font-weight:bold; opacity:.9; min-height:1.4em; }
   .jamo-row { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; }
-  .jamo-row .lab { width:100%; text-align:center; font-size:.78rem; font-weight:bold; opacity:.85; margin-top:4px; }
-  .jamo { border:none; border-radius:10px; width:44px; height:44px; font-size:1.25rem; font-weight:bold; cursor:pointer;
+  .jamo-row .lab { width:100%; text-align:center; font-size:.78rem; font-weight:bold; opacity:.85; margin-top:2px; }
+  .jamo { border:none; border-radius:10px; width:42px; height:42px; font-size:1.2rem; font-weight:bold; cursor:pointer;
     background:rgba(255,255,255,.18); color:#fff; }
   .jamo.on { background:#ffd93d; color:#5b3a00; }
 
-  /* kelime desteleri */
-  .decks { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; width:100%; margin-top:8px; }
-  .deck { background:rgba(255,255,255,.14); border-radius:16px; padding:14px 10px; text-align:center; cursor:pointer;
+  /* desteler */
+  .decks { display:grid; grid-template-columns:repeat(auto-fit,minmax(145px,1fr)); gap:12px; width:100%; margin-top:8px; }
+  .deck { background:rgba(255,255,255,.14); border-radius:16px; padding:13px 10px; text-align:center; cursor:pointer;
     border:2px solid rgba(255,255,255,.25); }
   .deck:active { transform:scale(.95); }
-  .deck .ico { font-size:2rem; }
-  .deck h4 { font-size:.92rem; margin:4px 0 2px; }
+  .deck .ico { font-size:1.9rem; }
+  .deck h4 { font-size:.9rem; margin:3px 0 2px; }
   .deck .prog { font-size:.72rem; opacity:.85; }
   .deck .bar { height:6px; background:rgba(0,0,0,.3); border-radius:4px; margin-top:6px; overflow:hidden; }
   .deck .bar div { height:100%; background:#7ed957; }
@@ -81,10 +83,10 @@
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
     box-shadow:0 12px 30px rgba(0,0,0,.35); padding:16px; text-align:center; }
   .fc-front { background:rgba(255,255,255,.96); color:#3b2660; }
-  .fc-front .kr { font-size:2.6rem; font-weight:bold; }
+  .fc-front .kr { font-size:2.5rem; font-weight:bold; }
   .fc-front .rom { font-size:.95rem; color:#8a5cb8; font-weight:bold; }
   .fc-back { background:linear-gradient(135deg,#7ed0ff,#5b9df9); color:#0a2a55; transform:rotateY(180deg); }
-  .fc-back .tr { font-size:1.7rem; font-weight:bold; }
+  .fc-back .tr { font-size:1.6rem; font-weight:bold; }
   .fc-btns { display:flex; gap:10px; margin-top:14px; }
   .fc-btns button { border:none; border-radius:14px; padding:13px 22px; font-weight:bold; font-size:1rem; cursor:pointer; }
   .fc-no { background:#ef9a9a; color:#5d1010; }
@@ -95,22 +97,54 @@
 
   /* quiz */
   .quiz-modes { display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; margin-top:8px; }
-  #qPrompt { background:rgba(255,255,255,.96); color:#3b2660; border-radius:20px; padding:20px;
+  #qPrompt { background:rgba(255,255,255,.96); color:#3b2660; border-radius:20px; padding:18px;
     width:100%; text-align:center; margin-top:10px; box-shadow:0 10px 24px rgba(0,0,0,.3); }
-  #qPrompt .big { font-size:2.1rem; font-weight:bold; }
+  #qPrompt .big { font-size:2rem; font-weight:bold; }
   #qPrompt .small { font-size:.85rem; color:#8a5cb8; font-weight:bold; margin-top:4px; }
   .q-opts { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-top:12px; }
-  .q-opt { border:none; border-radius:14px; padding:16px 8px; font-size:1.05rem; font-weight:bold; cursor:pointer;
+  .q-opt { border:none; border-radius:14px; padding:15px 8px; font-size:1.02rem; font-weight:bold; cursor:pointer;
     background:rgba(255,255,255,.9); color:#3b2660; }
   .q-opt.ok { background:#7ed957 !important; color:#0b3d10; }
   .q-opt.no { background:#ef9a9a !important; color:#5d1010; }
   .q-head { display:flex; gap:10px; align-items:center; justify-content:center; margin-top:8px; font-weight:bold; }
-  /* eşleştirme */
   .match-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; margin-top:12px; }
-  .m-item { border:none; border-radius:14px; padding:15px 8px; font-size:1.05rem; font-weight:bold; cursor:pointer;
+  .m-item { border:none; border-radius:14px; padding:14px 8px; font-size:1.02rem; font-weight:bold; cursor:pointer;
     background:rgba(255,255,255,.9); color:#3b2660; }
   .m-item.sel { background:#ffd93d; }
   .m-item.gone { opacity:.25; pointer-events:none; }
+  .m-item.no { background:#ef9a9a; }
+
+  /* cümle kurucu */
+  .sent-list { display:flex; flex-direction:column; gap:8px; width:100%; margin-top:8px; }
+  .sent-item { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,.13); border-radius:14px;
+    padding:11px 13px; cursor:pointer; }
+  .sent-item .st { font-size:1.2rem; }
+  .sent-item .info { flex:1; font-size:.85rem; }
+  .sent-item .info b { display:block; font-size:.92rem; }
+  #sbTr { background:rgba(255,255,255,.96); color:#3b2660; border-radius:18px; padding:16px; width:100%;
+    text-align:center; font-weight:bold; font-size:1.1rem; margin-top:10px; }
+  #sbBuilt { min-height:62px; width:100%; background:rgba(0,0,0,.25); border-radius:14px; margin-top:12px;
+    display:flex; flex-wrap:wrap; gap:8px; padding:10px; justify-content:center; align-items:center; }
+  #sbChips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:12px; }
+  .chip { border:none; border-radius:12px; padding:11px 15px; font-size:1.05rem; font-weight:bold; cursor:pointer;
+    background:rgba(255,255,255,.92); color:#3b2660; }
+  .chip.in { background:#ffd93d; }
+  .sb-btns { display:flex; gap:10px; margin-top:14px; }
+  .sb-btns button { border:none; border-radius:13px; padding:12px 20px; font-weight:bold; font-size:.95rem; cursor:pointer;
+    background:rgba(255,255,255,.2); color:#fff; }
+  .sb-btns .go { background:linear-gradient(135deg,#7ed957,#4ec98a); color:#0b3d10; }
+
+  /* dikte */
+  .dict-wrap { display:flex; flex-direction:column; align-items:center; gap:10px; width:100%; margin-top:8px; }
+  .big-speak { border:none; border-radius:50%; width:84px; height:84px; font-size:2.2rem; cursor:pointer;
+    background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; box-shadow:0 8px 20px rgba(255,180,60,.45); }
+
+  /* rozetler */
+  .badges { display:grid; grid-template-columns:repeat(auto-fit,minmax(105px,1fr)); gap:10px; width:100%; margin-top:8px; }
+  .badge { background:rgba(255,255,255,.13); border-radius:14px; padding:12px 6px; text-align:center; }
+  .badge.off { opacity:.32; filter:grayscale(1); }
+  .badge .ic { font-size:1.9rem; }
+  .badge .nm { font-size:.7rem; font-weight:bold; margin-top:4px; }
 
   .screen { position:fixed; inset:0; background:rgba(25,12,50,.94); backdrop-filter:blur(6px); display:none;
     flex-direction:column; align-items:center; justify-content:center; z-index:40; text-align:center; padding:22px; }
@@ -129,17 +163,26 @@
 
 <!-- ANA SAYFA -->
 <div class="page show" id="home">
+  <div class="level-box">
+    <div class="row"><span id="lvlTitle">Sv.1 · Filiz 🌱</span><span id="lvlXp"></span></div>
+    <div class="pbar"><div id="lvlBar" style="width:0%"></div></div>
+    <div class="row" style="margin-top:8px"><span>🎯 Günlük hedef</span><span id="dailyTxt">0/50 XP</span></div>
+    <div class="pbar green"><div id="dailyBar" style="width:0%"></div></div>
+  </div>
   <div class="stats">
-    <div>⭐ XP: <span id="xpVal">0</span></div>
-    <div>🔥 Seri: <span id="streakVal">0</span> gün</div>
-    <div>📖 Harf: <span id="lettersVal">0</span></div>
-    <div>💬 Kelime: <span id="wordsVal">0</span></div>
+    <div>⭐ <span id="xpVal">0</span> XP</div>
+    <div>🔥 <span id="streakVal">0</span> gün</div>
+    <div>📖 <span id="lettersVal">0</span> harf</div>
+    <div>💬 <span id="wordsVal">0</span> kelime</div>
   </div>
   <div class="modules">
-    <div class="mod" data-go="hangul"><span class="ico">📖</span><h3>Hangul Dersleri</h3><p>Kore alfabesini adım adım öğren</p></div>
-    <div class="mod" data-go="factory"><span class="ico">🏭</span><h3>Hece Fabrikası</h3><p>Harfleri birleştir, heceyi dinle</p></div>
-    <div class="mod" data-go="decks"><span class="ico">🗂️</span><h3>Kelime Kartları</h3><p>8 tema, akıllı tekrar sistemi</p></div>
-    <div class="mod" data-go="quiz"><span class="ico">🎯</span><h3>Quiz Salonu</h3><p>4 farklı test modu</p></div>
+    <div class="mod" data-go="hangul"><span class="ico">📖</span><h3>Hangul Dersleri</h3><p>Alfabeyi adım adım öğren</p></div>
+    <div class="mod" data-go="factory"><span class="ico">🏭</span><h3>Hece Fabrikası</h3><p>Harf birleştir, dinle</p></div>
+    <div class="mod" data-go="decks"><span class="ico">🗂️</span><h3>Kelime Kartları</h3><p>14 tema · akıllı tekrar</p></div>
+    <div class="mod" data-go="quiz"><span class="ico">🎯</span><h3>Quiz Salonu</h3><p>4 test modu</p></div>
+    <div class="mod" data-go="sentences"><span class="ico">🧱</span><h3>Cümle Kurucu</h3><p>Kelimeleri sıraya diz</p></div>
+    <div class="mod" data-go="dictation"><span class="ico">✍️</span><h3>Yazı Atölyesi</h3><p>Duy ve heceyi yaz (dikte)</p></div>
+    <div class="mod" data-go="badgesPage"><span class="ico">🏅</span><h3>Rozetlerim</h3><p>Koleksiyonunu büyüt</p></div>
   </div>
   <div id="ttsNote"></div>
 </div>
@@ -154,8 +197,8 @@
 <!-- HECE FABRİKASI -->
 <div class="page" id="factory">
   <div class="factory">
-    <div id="sylOut">가</div>
-    <div id="sylRom">ga</div>
+    <div class="syl-big" id="sylOut">가</div>
+    <div id="sylRom" style="font-weight:bold">ga</div>
     <div style="font-size:.78rem;opacity:.8">Heceye dokun = dinle 🔊</div>
     <div class="jamo-row" id="rowCho"><span class="lab">1️⃣ Baş ünsüz</span></div>
     <div class="jamo-row" id="rowJung"><span class="lab">2️⃣ Ünlü</span></div>
@@ -203,6 +246,43 @@
   <div class="match-grid" id="mGrid" style="display:none"></div>
 </div>
 
+<!-- CÜMLE KURUCU -->
+<div class="page" id="sentences"><div class="sent-list" id="sentList"></div></div>
+<div class="page" id="sentBuild">
+  <div class="q-head"><span id="sbProgress"></span></div>
+  <div id="sbTr"></div>
+  <div id="sbBuilt"></div>
+  <div id="sbChips"></div>
+  <div class="sb-btns">
+    <button id="sbClear">🧹 Temizle</button>
+    <button id="sbHear">🔊 Dinle</button>
+    <button class="go" id="sbCheck">✅ Kontrol Et</button>
+  </div>
+</div>
+
+<!-- DİKTE -->
+<div class="page" id="dictation">
+  <div class="quiz-modes">
+    <div class="mod" data-d="easy"><span class="ico">🐣</span><h3>Kolay Dikte</h3><p>Ünsüz + ünlü heceler</p></div>
+    <div class="mod" data-d="hard"><span class="ico">🦅</span><h3>Zor Dikte</h3><p>Son ünsüzlü heceler</p></div>
+  </div>
+</div>
+<div class="page" id="dictPlay">
+  <div class="dict-wrap">
+    <div class="q-head"><span id="dProgress"></span><span>·</span><span>✅ <span id="dScore">0</span></span></div>
+    <button class="big-speak" id="dSpeak">🔊</button>
+    <div style="font-size:.8rem;opacity:.85">Dinle, heceyi aşağıdan kur!</div>
+    <div class="syl-big" id="dOut" style="width:110px;height:110px;font-size:3.4rem">?</div>
+    <div class="jamo-row" id="dRowCho"><span class="lab">1️⃣ Baş ünsüz</span></div>
+    <div class="jamo-row" id="dRowJung"><span class="lab">2️⃣ Ünlü</span></div>
+    <div class="jamo-row" id="dRowJong"><span class="lab">3️⃣ Son ünsüz</span></div>
+    <button class="gold-btn" id="dCheck" style="margin-top:8px">✅ Kontrol Et</button>
+  </div>
+</div>
+
+<!-- ROZETLER -->
+<div class="page" id="badgesPage"><div class="badges" id="badgeGrid"></div></div>
+
 <div class="screen" id="resultScreen">
   <h2 id="resTitle"></h2>
   <p id="resMsg"></p>
@@ -211,7 +291,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-/* ================= VERİ ================= */
+/* ================= HANGUL VERİSİ ================= */
 const LESSONS = [
   { name:"Ders 1 · Temel Ünsüzler A", letters:[
     { ch:"ㄱ", nm:"giyeok", rom:"g/k", hint:"'g' sesi (gül)", ex:["가방","gabang","çanta"] },
@@ -233,7 +313,7 @@ const LESSONS = [
   { name:"Ders 4 · Ünlüler A", letters:[
     { ch:"ㅏ", nm:"a", rom:"a", hint:"'a' sesi (anne)", ex:["아빠","appa","baba"] },
     { ch:"ㅑ", nm:"ya", rom:"ya", hint:"'ya' sesi (yaz)", ex:["야구","yagu","beyzbol"] },
-    { ch:"ㅓ", nm:"eo", rom:"eo", hint:"açık 'o' (kapıyı 'o'rt)", ex:["어머니","eomeoni","anne"] },
+    { ch:"ㅓ", nm:"eo", rom:"eo", hint:"açık 'o' sesi", ex:["어머니","eomeoni","anne"] },
     { ch:"ㅕ", nm:"yeo", rom:"yeo", hint:"'yo'ya yakın", ex:["여우","yeou","tilki"] },
     { ch:"ㅣ", nm:"i", rom:"i", hint:"'i' sesi (ip)", ex:["이름","ireum","isim"] } ] },
   { name:"Ders 5 · Ünlüler B", letters:[
@@ -261,6 +341,7 @@ const LESSONS = [
     { ch:"ㅢ", nm:"ui", rom:"ui", hint:"'ıyi' sesi", ex:["의자","uija","sandalye"] } ] }
 ];
 
+/* ================= KELİME VERİSİ (14 deste × 12) ================= */
 const DECKS = [
   { id:"selam", ico:"👋", name:"Selamlaşma", words:[
     ["안녕하세요","annyeonghaseyo","Merhaba (kibar)"],["안녕","annyeong","Selam"],
@@ -302,10 +383,60 @@ const DECKS = [
     ["좋아","joa","Güzel / Beğendim"],["슬퍼","seulpeo","Üzgünüm"],["행복해","haengbokae","Mutluyum"],
     ["화났어","hwanasseo","Kızgınım"],["배고파","baegopa","Acıktım"],["졸려","jollyeo","Uykum var"],
     ["가다","gada","Gitmek"],["오다","oda","Gelmek"],["먹다","meokda","Yemek yemek"],
-    ["마시다","masida","İçmek"],["자다","jada","Uyumak"],["놀다","nolda","Oynamak"] ] }
+    ["마시다","masida","İçmek"],["자다","jada","Uyumak"],["놀다","nolda","Oynamak"] ] },
+  { id:"vucut", ico:"🙆", name:"Vücut", words:[
+    ["머리","meori","Baş / Saç"],["눈","nun","Göz"],["코","ko","Burun"],
+    ["입","ip","Ağız"],["귀","gwi","Kulak"],["손","son","El"],
+    ["발","bal","Ayak"],["다리","dari","Bacak"],["목","mok","Boyun"],
+    ["어깨","eokkae","Omuz"],["배","bae","Karın"],["얼굴","eolgul","Yüz"] ] },
+  { id:"doga", ico:"🌤️", name:"Doğa & Hava", words:[
+    ["하늘","haneul","Gökyüzü"],["바다","bada","Deniz"],["산","san","Dağ"],
+    ["나무","namu","Ağaç"],["꽃","kkot","Çiçek"],["비","bi","Yağmur"],
+    ["눈사람","nunsaram","Kardan adam"],["해","hae","Güneş"],["달","dal","Ay"],
+    ["별","byeol","Yıldız"],["바람","baram","Rüzgâr"],["무지개","mujigae","Gökkuşağı"] ] },
+  { id:"giysi", ico:"👕", name:"Giysiler", words:[
+    ["옷","ot","Kıyafet"],["바지","baji","Pantolon"],["치마","chima","Etek"],
+    ["신발","sinbal","Ayakkabı"],["모자","moja","Şapka"],["양말","yangmal","Çorap"],
+    ["티셔츠","tisyeocheu","Tişört"],["장갑","janggap","Eldiven"],["안경","angyeong","Gözlük"],
+    ["코트","koteu","Palto"],["원피스","wonpiseu","Elbise"],["목도리","mokdori","Atkı"] ] },
+  { id:"zaman", ico:"📅", name:"Zaman", words:[
+    ["오늘","oneul","Bugün"],["내일","naeil","Yarın"],["어제","eoje","Dün"],
+    ["아침","achim","Sabah"],["점심","jeomsim","Öğle"],["저녁","jeonyeok","Akşam"],
+    ["밤","bam","Gece"],["월요일","woryoil","Pazartesi"],["일요일","iryoil","Pazar"],
+    ["주말","jumal","Hafta sonu"],["시간","sigan","Zaman / Saat"],["생일","saengil","Doğum günü"] ] },
+  { id:"konusma", ico:"💬", name:"Günlük Konuşma", words:[
+    ["뭐?","mwo?","Ne?"],["어디?","eodi?","Nerede?"],["누구?","nugu?","Kim?"],
+    ["왜?","wae?","Neden?"],["언제?","eonje?","Ne zaman?"],["얼마예요?","eolmayeyo?","Kaç para?"],
+    ["맛있어요","masisseoyo","Çok lezzetli"],["진짜?","jinjja?","Gerçekten mi?"],["대박","daebak","Müthiş!"],
+    ["화이팅","hwaiting","Haydi! / Başarılar!"],["괜찮아","gwaenchana","Sorun değil"],["몰라","molla","Bilmiyorum"] ] },
+  { id:"ev", ico:"🏠", name:"Ev", words:[
+    ["집","jip","Ev"],["방","bang","Oda"],["문","mun","Kapı"],
+    ["창문","changmun","Pencere"],["침대","chimdae","Yatak"],["부엌","bueok","Mutfak"],
+    ["화장실","hwajangsil","Tuvalet / Banyo"],["텔레비전","tellebijeon","Televizyon"],["전화","jeonhwa","Telefon"],
+    ["컴퓨터","keompyuteo","Bilgisayar"],["시계","sigye","Saat"],["거울","geoul","Ayna"] ] }
 ];
 
-/* hece fabrikası verisi */
+/* ================= CÜMLELER ================= */
+const SENTENCES = [
+  { kr:"저는 학생이에요", tr:"Ben öğrenciyim", chips:["저는","학생이에요"] },
+  { kr:"이것은 사과예요", tr:"Bu bir elma", chips:["이것은","사과예요"] },
+  { kr:"고양이가 귀여워요", tr:"Kedi çok tatlı", chips:["고양이가","귀여워요"] },
+  { kr:"물 주세요", tr:"Su lütfen", chips:["물","주세요"] },
+  { kr:"김치가 맛있어요", tr:"Kimchi lezzetli", chips:["김치가","맛있어요"] },
+  { kr:"학교에 가요", tr:"Okula gidiyorum", chips:["학교에","가요"] },
+  { kr:"책을 읽어요", tr:"Kitap okuyorum", chips:["책을","읽어요"] },
+  { kr:"우유를 마셔요", tr:"Süt içiyorum", chips:["우유를","마셔요"] },
+  { kr:"친구를 만나요", tr:"Arkadaşımla buluşuyorum", chips:["친구를","만나요"] },
+  { kr:"한국어를 공부해요", tr:"Korece çalışıyorum", chips:["한국어를","공부해요"] },
+  { kr:"음악을 들어요", tr:"Müzik dinliyorum", chips:["음악을","들어요"] },
+  { kr:"오늘 날씨가 좋아요", tr:"Bugün hava güzel", chips:["오늘","날씨가","좋아요"] },
+  { kr:"저는 빵을 먹어요", tr:"Ben ekmek yiyorum", chips:["저는","빵을","먹어요"] },
+  { kr:"엄마가 집에 있어요", tr:"Annem evde", chips:["엄마가","집에","있어요"] },
+  { kr:"내일 학교에 가요", tr:"Yarın okula gidiyorum", chips:["내일","학교에","가요"] },
+  { kr:"강아지가 공원에서 놀아요", tr:"Köpek parkta oynuyor", chips:["강아지가","공원에서","놀아요"] }
+];
+
+/* ================= HECE VERİSİ ================= */
 const CHO = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
 const CHO_R = ["g","kk","n","d","tt","r","m","b","pp","s","ss","","j","jj","ch","k","t","p","h"];
 const JUNG = ["ㅏ","ㅐ","ㅑ","ㅒ","ㅓ","ㅔ","ㅕ","ㅖ","ㅗ","ㅘ","ㅙ","ㅚ","ㅛ","ㅜ","ㅝ","ㅞ","ㅟ","ㅠ","ㅡ","ㅢ","ㅣ"];
@@ -313,25 +444,38 @@ const JUNG_R = ["a","ae","ya","yae","eo","e","yeo","ye","o","wa","wae","oe","yo"
 const JONG = ["","ㄱ","ㄴ","ㄹ","ㅁ","ㅂ","ㅅ","ㅇ"];
 const JONG_IDX = { "":0, "ㄱ":1, "ㄴ":4, "ㄹ":8, "ㅁ":16, "ㅂ":17, "ㅅ":19, "ㅇ":21 };
 const JONG_R = { "":"", "ㄱ":"k", "ㄴ":"n", "ㄹ":"l", "ㅁ":"m", "ㅂ":"p", "ㅅ":"t", "ㅇ":"ng" };
-
 function compose(ci, vi, jongCh) {
   return String.fromCharCode(0xAC00 + (ci*21 + vi)*28 + JONG_IDX[jongCh]);
 }
+/* dikte havuzları: [cho, jung, jong] */
+const DICT_EASY = [[0,0,""],[2,0,""],[3,0,""],[6,0,""],[7,0,""],[9,0,""],[11,0,""],[12,0,""],[18,0,""],
+  [0,8,""],[2,8,""],[6,13,""],[9,8,""],[11,13,""],[5,20,""],[14,20,""],[15,8,""],[16,13,""],[17,8,""],[18,20,""]];
+const DICT_HARD = [[18,0,"ㄴ"],[0,0,"ㅇ"],[0,20,"ㅁ"],[7,6,"ㄹ"],[9,0,"ㄴ"],[6,0,"ㄹ"],[7,0,"ㅁ"],[11,13,"ㄴ"],
+  [3,0,"ㄹ"],[12,0,"ㅇ"],[2,13,"ㄴ"],[6,18,"ㄹ"],[9,4,"ㄴ"],[7,0,"ㅂ"],[0,4,"ㅁ"],[5,0,"ㅇ"],[2,0,"ㄹ"],[16,8,"ㅇ"]];
 
-/* ================= KAYIT ================= */
+/* ================= KAYIT / SEVİYE / ROZET ================= */
 const SAVE = "koreceSave";
 let S;
-function fresh() { return { xp:0, streak:0, lastDay:"", lessonsDone:{}, srs:{}, deckIntro:{} }; }
+function fresh() { return { xp:0, streak:0, lastDay:"", lessonsDone:{}, srs:{}, sentDone:{}, dictBest:{easy:0,hard:0},
+  daily:{ day:"", xp:0 }, counters:{ quiz10:0, dicts:0, cards:0 } }; }
 function load() {
-  try { S = JSON.parse(localStorage.getItem(SAVE)) || fresh(); } catch(e) { S = fresh(); }
-  // seri kontrolü
+  try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(SAVE)) || {}); } catch(e) { S = fresh(); }
+  S.daily = S.daily || { day:"", xp:0 };
+  S.counters = S.counters || { quiz10:0, dicts:0, cards:0 };
+  S.sentDone = S.sentDone || {};
+  S.dictBest = S.dictBest || { easy:0, hard:0 };
   const today = new Date().toDateString();
-  if (S.lastDay !== today) {
-    const y = new Date(); y.setDate(y.getDate()-1);
-    if (S.lastDay !== y.toDateString() && S.lastDay !== "") S.streak = 0;
-  }
+  if (S.daily.day !== today) { S.daily.day = today; S.daily.xp = 0; }
 }
 function save() { try { localStorage.setItem(SAVE, JSON.stringify(S)); } catch(e) {} }
+
+const LEVELS_XP = [0, 60, 150, 300, 500, 800, 1200, 1700, 2400, 3200];
+const LEVEL_NAMES = ["Filiz 🌱","Çaylak 🐣","Öğrenci 📚","Çalışkan ✏️","Bilgin 🤓","Usta 🎓","Şampiyon 🏆","Yıldız 🌟","Efsane 🐉","Kraliçe 👑"];
+function levelOf(xp) {
+  let lv = 0;
+  for (let i = 0; i < LEVELS_XP.length; i++) if (xp >= LEVELS_XP[i]) lv = i;
+  return lv;
+}
 function addXp(n) {
   S.xp += n;
   const today = new Date().toDateString();
@@ -340,8 +484,42 @@ function addXp(n) {
     S.streak = (S.lastDay === y.toDateString()) ? S.streak + 1 : 1;
     S.lastDay = today;
   }
+  if (S.daily.day !== today) { S.daily.day = today; S.daily.xp = 0; }
+  const beforeGoal = S.daily.xp;
+  S.daily.xp += n;
   save(); renderStats();
   toast("+" + n + " XP ⭐");
+  if (beforeGoal < 50 && S.daily.xp >= 50) setTimeout(() => toast("🎯 Günlük hedef tamam! Harikasın!"), 1700);
+  checkBadges();
+}
+
+const BADGES = [
+  { id:"l1",   ic:"📖", nm:"İlk Ders",        test:() => Object.values(S.lessonsDone).filter(Boolean).length >= 1 },
+  { id:"l4",   ic:"📚", nm:"4 Ders",          test:() => Object.values(S.lessonsDone).filter(Boolean).length >= 4 },
+  { id:"l8",   ic:"🎓", nm:"Alfabe Ustası",   test:() => Object.values(S.lessonsDone).filter(Boolean).length >= 8 },
+  { id:"w10",  ic:"💬", nm:"10 Kelime",       test:() => Object.values(S.srs).filter(x=>x.box>=2).length >= 10 },
+  { id:"w50",  ic:"🗣️", nm:"50 Kelime",       test:() => Object.values(S.srs).filter(x=>x.box>=2).length >= 50 },
+  { id:"w100", ic:"🦜", nm:"100 Kelime",      test:() => Object.values(S.srs).filter(x=>x.box>=2).length >= 100 },
+  { id:"s1",   ic:"🧱", nm:"İlk Cümle",       test:() => Object.values(S.sentDone).filter(Boolean).length >= 1 },
+  { id:"s16",  ic:"🏗️", nm:"Cümle Mimarı",    test:() => Object.values(S.sentDone).filter(Boolean).length >= SENTENCES.length },
+  { id:"d1",   ic:"✍️", nm:"İlk Dikte",       test:() => S.counters.dicts >= 1 },
+  { id:"d10",  ic:"🖋️", nm:"Dikte Kurdu",     test:() => S.counters.dicts >= 10 },
+  { id:"q10",  ic:"🎯", nm:"Tam İsabet",      test:() => S.counters.quiz10 >= 1 },
+  { id:"st3",  ic:"🔥", nm:"3 Gün Seri",      test:() => S.streak >= 3 },
+  { id:"st7",  ic:"🌋", nm:"7 Gün Seri",      test:() => S.streak >= 7 },
+  { id:"xp500",ic:"⭐", nm:"500 XP",          test:() => S.xp >= 500 },
+  { id:"xp2k", ic:"💫", nm:"2000 XP",         test:() => S.xp >= 2000 }
+];
+let shownBadges = {};
+try { shownBadges = JSON.parse(localStorage.getItem("koreceBadgesShown")) || {}; } catch(e) {}
+function checkBadges() {
+  BADGES.forEach(b => {
+    if (b.test() && !shownBadges[b.id]) {
+      shownBadges[b.id] = true;
+      try { localStorage.setItem("koreceBadgesShown", JSON.stringify(shownBadges)); } catch(e) {}
+      setTimeout(() => toast(`🏅 Yeni rozet: ${b.nm}!`), 800);
+    }
+  });
 }
 
 /* ================= TTS ================= */
@@ -352,7 +530,7 @@ function pickVoice() {
     koVoice = vs.find(v => v.lang && v.lang.toLowerCase().startsWith("ko")) || null;
     document.getElementById("ttsNote").textContent = koVoice
       ? "🔊 Korece ses hazır: kartlara ve hecelere dokununca dinleyebilirsin!"
-      : "🔇 Bu cihazda Korece ses bulunamadı. iPad'de: Ayarlar → Erişilebilirlik → Sesli İçerik → Sesler → Korece indirin.";
+      : "🔇 Korece ses bulunamadı. iPad: Ayarlar → Erişilebilirlik → Sesli İçerik → Sesler → Korece indirin.";
   } catch(e) {}
 }
 try { speechSynthesis.onvoiceschanged = pickVoice; pickVoice(); } catch(e) {}
@@ -366,11 +544,13 @@ function speak(text, rate) {
     speechSynthesis.speak(u);
   } catch(e) {}
 }
+window.speak = speak;
 
 /* ================= GEZİNME ================= */
 const TITLES = { home:"🇰🇷 Korece Dünyası", hangul:"📖 Hangul Dersleri", lesson:"📖 Ders",
   factory:"🏭 Hece Fabrikası", decks:"🗂️ Kelime Desteleri", cards:"🃏 Kelime Kartları",
-  quiz:"🎯 Quiz Salonu", quizPlay:"🎯 Quiz" };
+  quiz:"🎯 Quiz Salonu", quizPlay:"🎯 Quiz", sentences:"🧱 Cümle Kurucu", sentBuild:"🧱 Cümle",
+  dictation:"✍️ Yazı Atölyesi", dictPlay:"✍️ Dikte", badgesPage:"🏅 Rozetlerim" };
 let pageStack = ["home"];
 function go(p, push = true) {
   document.querySelectorAll(".page").forEach(x => x.classList.remove("show"));
@@ -381,6 +561,8 @@ function go(p, push = true) {
   if (p === "home") { pageStack = ["home"]; renderStats(); }
   if (p === "hangul") renderLessons();
   if (p === "decks") renderDecks();
+  if (p === "sentences") renderSentences();
+  if (p === "badgesPage") renderBadges();
 }
 document.getElementById("backBtn").onclick = () => {
   pageStack.pop();
@@ -396,9 +578,18 @@ function renderStats() {
     Object.keys(S.lessonsDone).filter(k => S.lessonsDone[k]).reduce((a,k) => a + LESSONS[k].letters.length, 0);
   document.getElementById("wordsVal").textContent =
     Object.values(S.srs).filter(x => x.box >= 2).length;
+  // seviye
+  const lv = levelOf(S.xp);
+  const cur = LEVELS_XP[lv], next = LEVELS_XP[lv+1] || (S.xp+1);
+  document.getElementById("lvlTitle").textContent = `Sv.${lv+1} · ${LEVEL_NAMES[lv]}`;
+  document.getElementById("lvlXp").textContent = lv+1 < LEVELS_XP.length ? `${S.xp - cur}/${next - cur} XP` : "MAX!";
+  document.getElementById("lvlBar").style.width = Math.min(100, (S.xp - cur)/(next - cur)*100) + "%";
+  // günlük hedef
+  document.getElementById("dailyTxt").textContent = `${Math.min(50,S.daily.xp)}/50 XP` + (S.daily.xp >= 50 ? " ✅" : "");
+  document.getElementById("dailyBar").style.width = Math.min(100, S.daily.xp/50*100) + "%";
 }
 
-/* ================= HANGUL DERSLERİ ================= */
+/* ================= HANGUL ================= */
 let curLesson = 0;
 function renderLessons() {
   const list = document.getElementById("lessonList"); list.innerHTML = "";
@@ -432,14 +623,13 @@ document.getElementById("lessonQuizBtn").onclick = () => startLessonQuiz();
 let LQ = null;
 function startLessonQuiz() {
   const letters = LESSONS[curLesson].letters;
-  // tüm harflerden soru havuzu (4 seçenek için diğer derslerden de harf al)
   const allLetters = LESSONS.flatMap(l => l.letters);
   const qs = [...letters].sort(() => Math.random()-.5).map(L => {
     const wrong = allLetters.filter(x => x.ch !== L.ch).sort(() => Math.random()-.5).slice(0,3);
     const opts = [...wrong, L].sort(() => Math.random()-.5);
     return { prompt:L.ch, sub:"Bu harfin sesi hangisi?", answer:L, opts, speakText:L.ex[0] };
   });
-  LQ = { qs, i:0, score:0, type:"lesson" };
+  LQ = { qs, i:0, score:0 };
   renderLQ();
   go("quizPlay");
 }
@@ -476,44 +666,48 @@ function finishLessonQuiz() {
   if (pass && !S.lessonsDone[curLesson]) { S.lessonsDone[curLesson] = true; save(); addXp(30); }
   else if (pass) addXp(10);
   showResult(pass ? "🎉 Dersi Geçtin!" : "💪 Biraz Daha Çalış",
-    `${LQ.score}/${LQ.qs.length} doğru` + (pass ? " — sonraki ders açıldı!" : " — harflere tekrar bak, yine dene!"),
+    `${LQ.score}/${LQ.qs.length} doğru` + (pass ? " — sonraki ders açıldı!" : " — harflere tekrar bak!"),
     () => go(pass ? "hangul" : "lesson", false));
 }
 
 /* ================= HECE FABRİKASI ================= */
 let fCho = 0, fJung = 0, fJong = "";
-function buildFactory() {
-  const mkRow = (rowId, items, fn, isOn) => {
+function buildJamoRows(choId, jungId, jongId, onPick) {
+  const mk = (rowId, items, kind) => {
     const row = document.getElementById(rowId);
     items.forEach((ch, i) => {
       const b = document.createElement("button");
       b.className = "jamo";
       b.textContent = ch === "" ? "—" : ch;
-      b.onclick = () => { fn(ch, i); updateFactory(); };
-      b.dataset.i = i; b.dataset.row = rowId;
+      b.dataset.i = i; b.dataset.kind = kind;
+      b.onclick = () => onPick(kind, ch, i);
       row.appendChild(b);
     });
   };
-  mkRow("rowCho", CHO, (ch,i) => fCho = i);
-  mkRow("rowJung", JUNG, (ch,i) => fJung = i);
-  mkRow("rowJong", JONG, (ch) => fJong = ch);
-  document.getElementById("sylOut").onclick = () => speak(document.getElementById("sylOut").textContent);
-  updateFactory();
+  mk(choId, CHO, "cho"); mk(jungId, JUNG, "jung"); mk(jongId, JONG, "jong");
 }
+function markRows(prefix, cho, jung, jong) {
+  document.querySelectorAll(`#${prefix}Cho .jamo`).forEach(b => b.classList.toggle("on", +b.dataset.i === cho));
+  document.querySelectorAll(`#${prefix}Jung .jamo`).forEach(b => b.classList.toggle("on", +b.dataset.i === jung));
+  document.querySelectorAll(`#${prefix}Jong .jamo`).forEach(b =>
+    b.classList.toggle("on", (b.textContent === "—" ? "" : b.textContent) === jong));
+}
+buildJamoRows("rowCho","rowJung","rowJong", (kind, ch, i) => {
+  if (kind === "cho") fCho = i; else if (kind === "jung") fJung = i; else fJong = ch;
+  updateFactory();
+});
 function updateFactory() {
   const syl = compose(fCho, fJung, fJong);
   document.getElementById("sylOut").textContent = syl;
-  document.getElementById("sylRom").textContent =
-    (CHO_R[fCho] + JUNG_R[fJung] + (JONG_R[fJong]||"")) || "-";
-  document.querySelectorAll('#rowCho .jamo').forEach(b => b.classList.toggle("on", +b.dataset.i === fCho));
-  document.querySelectorAll('#rowJung .jamo').forEach(b => b.classList.toggle("on", +b.dataset.i === fJung));
-  document.querySelectorAll('#rowJong .jamo').forEach(b =>
-    b.classList.toggle("on", (b.textContent === "—" ? "" : b.textContent) === fJong));
+  document.getElementById("sylRom").textContent = (CHO_R[fCho] + JUNG_R[fJung] + (JONG_R[fJong]||"")) || "-";
+  markRows("row", fCho, fJung, fJong);
   speak(syl, 0.8);
 }
+document.getElementById("sylOut").onclick = () => speak(document.getElementById("sylOut").textContent);
+markRows("row", 0, 0, "");
 
-/* ================= SRS (Leitner) ================= */
-const BOX_GAPS = [0, 10*60e3, 24*3600e3, 3*24*3600e3, 7*24*3600e3]; // kutu → tekrar aralığı
+/* ================= SRS ================= */
+const BOX_GAPS = [0, 10*60e3, 24*3600e3, 3*24*3600e3, 7*24*3600e3];
 function wordKey(deckId, kr) { return deckId + "|" + kr; }
 function getSrs(k) { return S.srs[k] || { box:0, due:0 }; }
 function gradeWord(k, known) {
@@ -533,20 +727,19 @@ function renderDecks() {
     const el = document.createElement("div");
     el.className = "deck";
     el.innerHTML = `<div class="ico">${d.ico}</div><h4>${d.name}</h4>
-      <div class="prog">${learned}/${d.words.length} öğrenildi${due ? " · 🔔 "+due+" tekrar" : ""}</div>
+      <div class="prog">${learned}/${d.words.length}${due ? " · 🔔 "+due : ""}</div>
       <div class="bar"><div style="width:${learned/d.words.length*100}%"></div></div>`;
     el.onclick = () => startCards(d);
     g.appendChild(el);
   });
 }
 function startCards(deck) {
-  // önce vadesi gelenler, sonra yeniler, sonra kalanlar — en fazla 10 kart
   const now = Date.now();
   const scored = deck.words.map(w => {
     const s = getSrs(wordKey(deck.id, w[0]));
     let pri = 2;
-    if (s.box > 0 && s.due <= now) pri = 0;        // tekrar zamanı
-    else if (s.box === 0) pri = 1;                  // yeni
+    if (s.box > 0 && s.due <= now) pri = 0;
+    else if (s.box === 0) pri = 1;
     return { w, s, pri };
   }).sort((a,b) => a.pri - b.pri || a.s.due - b.s.due);
   session = { deck, list: scored.slice(0, 10).map(x => x.w), i: 0, correct: 0 };
@@ -573,20 +766,19 @@ function gradeCard(known) {
   const [kr] = session.list[session.i];
   gradeWord(wordKey(session.deck.id, kr), known);
   if (known) session.correct++;
+  S.counters.cards++;
   session.i++;
   if (session.i < session.list.length) renderCard();
   else {
     addXp(5 + session.correct * 2);
-    showResult("🃏 Deste Bitti!", `${session.correct}/${session.list.length} kartı bildin!`,
-      () => go("decks", false));
+    showResult("🃏 Deste Bitti!", `${session.correct}/${session.list.length} kartı bildin!`, () => go("decks", false));
   }
 }
 
-/* ================= QUIZ SALONU ================= */
-const allWords = () => DECKS.flatMap(d => d.words.map(w => ({ deck:d.id, kr:w[0], rom:w[1], tr:w[2] })));
+/* ================= QUIZ ================= */
+const allWords = () => DECKS.flatMap(d => d.words.map(w => ({ kr:w[0], rom:w[1], tr:w[2] })));
 let Q = null;
 document.querySelectorAll(".mod[data-q]").forEach(m => m.onclick = () => startQuiz(m.dataset.q));
-
 function startQuiz(mode) {
   const pool = allWords().sort(() => Math.random()-.5);
   if (mode === "match") { startMatch(pool); return; }
@@ -607,9 +799,10 @@ function renderQ() {
   document.getElementById("qOpts").style.display = "grid";
   const P = document.getElementById("qPrompt");
   if (mode === "kr2tr") P.innerHTML = `<div class="big">${q.w.kr}</div><div class="small">${q.w.rom} — Türkçesi hangisi?</div>`;
-  else if (mode === "tr2kr") P.innerHTML = `<div class="big" style="font-size:1.5rem">${q.w.tr}</div><div class="small">Korecesi hangisi?</div>`;
+  else if (mode === "tr2kr") P.innerHTML = `<div class="big" style="font-size:1.4rem">${q.w.tr}</div><div class="small">Korecesi hangisi?</div>`;
   else { P.innerHTML = `<div class="big">🎧</div><div class="small">Dinle ve doğru kelimeyi seç!</div>
-    <button class="speak-chip" onclick="speak('${q.w.kr.replace(/'/g,"\\'")}')" style="margin-top:8px">🔊</button>`;
+    <button class="speak-chip" id="qListenBtn" style="margin-top:8px">🔊</button>`;
+    document.getElementById("qListenBtn").onclick = () => speak(q.w.kr);
     setTimeout(() => speak(q.w.kr), 400); }
   const opts = document.getElementById("qOpts"); opts.innerHTML = "";
   q.opts.forEach(o => {
@@ -627,7 +820,6 @@ function answerQ(btn, o, q) {
   btn.classList.add(ok ? "ok" : "no");
   if (ok) { Q.score++; if (Q.mode !== "listen") speak(q.w.kr); }
   else {
-    // doğruyu göster
     [...document.querySelectorAll(".q-opt")].forEach(b => {
       if (b.textContent.includes(q.w.tr) || b.textContent.includes(q.w.kr)) b.classList.add("ok");
     });
@@ -637,22 +829,18 @@ function answerQ(btn, o, q) {
     Q.i++;
     if (Q.i < Q.qs.length) renderQ();
     else {
+      if (Q.score === 10) { S.counters.quiz10++; save(); }
       addXp(Q.score * 5);
       showResult(Q.score >= 8 ? "🏆 Süpersin!" : Q.score >= 5 ? "🎉 Güzel!" : "💪 Devam!",
         `${Q.score}/10 doğru — +${Q.score*5} XP`, () => go("quiz", false));
     }
   }, 1100);
 }
-
-/* eşleştirme modu */
 let M = null;
 function startMatch(pool) {
   const six = pool.slice(0, 6);
   const items = [];
-  six.forEach((w, i) => {
-    items.push({ id:i, side:"kr", label:w.kr, speakKr:w.kr });
-    items.push({ id:i, side:"tr", label:w.tr });
-  });
+  six.forEach((w, i) => { items.push({ id:i, side:"kr", label:w.kr, sp:w.kr }); items.push({ id:i, side:"tr", label:w.tr }); });
   items.sort(() => Math.random()-.5);
   M = { items, sel:null, found:0, tries:0 };
   document.getElementById("qProgress").textContent = "Eşleştirme";
@@ -672,7 +860,7 @@ function startMatch(pool) {
 }
 function tapMatch(idx, btn) {
   const it = M.items[idx];
-  if (it.side === "kr") speak(it.speakKr);
+  if (it.side === "kr") speak(it.sp);
   if (M.sel === null) { M.sel = { idx, btn }; btn.classList.add("sel"); return; }
   if (M.sel.idx === idx) { btn.classList.remove("sel"); M.sel = null; return; }
   const other = M.items[M.sel.idx];
@@ -686,7 +874,7 @@ function tapMatch(idx, btn) {
     if (M.found === 6) {
       const xp = Math.max(10, 40 - (M.tries - 6) * 3);
       addXp(xp);
-      showResult("🔗 Hepsini Eşleştirdin!", `${M.tries} denemede bitirdin — +${xp} XP`, () => go("quiz", false));
+      showResult("🔗 Hepsini Eşleştirdin!", `${M.tries} denemede — +${xp} XP`, () => go("quiz", false));
     }
   } else {
     btn.classList.add("no"); M.sel.btn.classList.add("no");
@@ -694,6 +882,128 @@ function tapMatch(idx, btn) {
     setTimeout(() => { btn.classList.remove("no"); a.classList.remove("no","sel"); }, 500);
     M.sel = null;
   }
+}
+
+/* ================= CÜMLE KURUCU ================= */
+let SB = null;
+function renderSentences() {
+  const list = document.getElementById("sentList"); list.innerHTML = "";
+  SENTENCES.forEach((s, i) => {
+    const d = document.createElement("div");
+    d.className = "sent-item";
+    d.innerHTML = `<span class="st">${S.sentDone[i] ? "✅" : "🧱"}</span>
+      <span class="info"><b>${s.tr}</b>${S.sentDone[i] ? s.kr : "· · ·"}</span>`;
+    d.onclick = () => startSentence(i);
+    list.appendChild(d);
+  });
+}
+function startSentence(i) {
+  const s = SENTENCES[i];
+  let shuffled;
+  do { shuffled = [...s.chips].sort(() => Math.random()-.5); }
+  while (s.chips.length > 1 && shuffled.join(" ") === s.chips.join(" "));
+  SB = { i, s, picked: [], shuffled };
+  document.getElementById("sbProgress").textContent = `Cümle ${i+1}/${SENTENCES.length}`;
+  document.getElementById("sbTr").textContent = "🇹🇷 " + s.tr;
+  renderSB();
+  go("sentBuild");
+}
+function renderSB() {
+  const built = document.getElementById("sbBuilt"); built.innerHTML = "";
+  SB.picked.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.className = "chip in";
+    b.textContent = c;
+    b.onclick = () => { SB.picked.splice(i, 1); renderSB(); };
+    built.appendChild(b);
+  });
+  if (!SB.picked.length) built.innerHTML = '<span style="opacity:.5;font-size:.85rem">kelimelere dokunarak cümleyi kur</span>';
+  const chips = document.getElementById("sbChips"); chips.innerHTML = "";
+  SB.shuffled.forEach(c => {
+    const used = SB.picked.filter(x => x === c).length;
+    const total = SB.shuffled.filter(x => x === c).length;
+    const avail = SB.picked.filter(x => x === c).length < SB.s.chips.filter(x => x === c).length;
+    const b = document.createElement("button");
+    b.className = "chip";
+    b.textContent = c;
+    if (SB.picked.length >= 0 && used >= total) b.style.visibility = "hidden";
+    b.onclick = () => { if (used < total) { SB.picked.push(c); renderSB(); } };
+    chips.appendChild(b);
+  });
+}
+document.getElementById("sbClear").onclick = () => { SB.picked = []; renderSB(); };
+document.getElementById("sbHear").onclick = () => speak(SB.s.kr, 0.78);
+document.getElementById("sbCheck").onclick = () => {
+  const got = SB.picked.join(" ");
+  if (got === SB.s.kr) {
+    speak(SB.s.kr, 0.78);
+    const first = !S.sentDone[SB.i];
+    if (first) { S.sentDone[SB.i] = true; save(); }
+    addXp(first ? 15 : 5);
+    showResult("🎉 Doğru Cümle!", `"${SB.s.kr}" = ${SB.s.tr}`, () => {
+      const next = SENTENCES.findIndex((_, j) => j > SB.i && !S.sentDone[j]);
+      if (next >= 0) startSentence(next); else go("sentences", false);
+    });
+  } else {
+    toast("🤔 Olmadı — sırayı değiştir!");
+  }
+};
+
+/* ================= DİKTE ================= */
+let D = null;
+let dCho = 0, dJung = 0, dJong = "";
+buildJamoRows("dRowCho","dRowJung","dRowJong", (kind, ch, i) => {
+  if (kind === "cho") dCho = i; else if (kind === "jung") dJung = i; else dJong = ch;
+  document.getElementById("dOut").textContent = compose(dCho, dJung, dJong);
+  markRows("dRow", dCho, dJung, dJong);
+});
+document.querySelectorAll(".mod[data-d]").forEach(m => m.onclick = () => startDict(m.dataset.d));
+function startDict(mode) {
+  const pool = (mode === "easy" ? DICT_EASY : DICT_HARD).slice().sort(() => Math.random()-.5);
+  D = { mode, rounds: pool.slice(0, 8), i: 0, score: 0 };
+  document.getElementById("dRowJong").style.display = mode === "easy" ? "none" : "flex";
+  nextDict();
+  go("dictPlay");
+}
+function nextDict() {
+  const [c, v, j] = D.rounds[D.i];
+  D.target = compose(c, v, j);
+  dCho = 0; dJung = 0; dJong = "";
+  document.getElementById("dOut").textContent = "?";
+  markRows("dRow", -1, -1, "—yok—");
+  document.getElementById("dProgress").textContent = `Hece ${D.i+1}/${D.rounds.length}`;
+  document.getElementById("dScore").textContent = D.score;
+  setTimeout(() => speak(D.target, 0.7), 500);
+}
+document.getElementById("dSpeak").onclick = () => D && speak(D.target, 0.7);
+document.getElementById("dCheck").onclick = () => {
+  if (!D) return;
+  const got = compose(dCho, dJung, D.mode === "easy" ? "" : dJong);
+  const ok = got === D.target;
+  if (ok) { D.score++; toast("✅ Doğru: " + D.target); }
+  else toast("❌ Doğrusu: " + D.target + " (sen: " + got + ")");
+  D.i++;
+  if (D.i < D.rounds.length) setTimeout(nextDict, 1100);
+  else {
+    S.counters.dicts++;
+    if (D.score > (S.dictBest[D.mode]||0)) S.dictBest[D.mode] = D.score;
+    save();
+    addXp(D.score * 6);
+    setTimeout(() => showResult(D.score >= 6 ? "✍️ Dikte Ustası!" : "💪 İyi Deneme!",
+      `${D.score}/${D.rounds.length} hece doğru — +${D.score*6} XP`, () => go("dictation", false)), 1200);
+  }
+};
+
+/* ================= ROZETLER ================= */
+function renderBadges() {
+  const g = document.getElementById("badgeGrid"); g.innerHTML = "";
+  BADGES.forEach(b => {
+    const has = b.test();
+    const d = document.createElement("div");
+    d.className = "badge" + (has ? "" : " off");
+    d.innerHTML = `<div class="ic">${b.ic}</div><div class="nm">${b.nm}</div>`;
+    g.appendChild(d);
+  });
 }
 
 /* ================= ORTAK ================= */
@@ -711,15 +1021,17 @@ function toast(msg) {
   t.textContent = msg;
   t.classList.add("show");
   clearTimeout(t._tm);
-  t._tm = setTimeout(() => t.classList.remove("show"), 1600);
+  t._tm = setTimeout(() => t.classList.remove("show"), 1700);
 }
 
 load();
-buildFactory();
 renderStats();
 pickVoice();
+checkBadges();
 
-if (typeof module !== 'undefined') module.exports = { compose, JONG_IDX, LESSONS, DECKS, CHO, JUNG, CHO_R, JUNG_R };
+if (typeof module !== 'undefined') module.exports = { compose, JONG_IDX, LESSONS, DECKS, SENTENCES, DICT_EASY, DICT_HARD, CHO, JUNG };
 </script>
 </body>
 </html>
+= "lesson-card" + (unlocked ? "" : " locked");
+    d.innerHTML = `<span class="big">${unlocked ? ls.letters
