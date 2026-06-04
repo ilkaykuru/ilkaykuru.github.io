@@ -84,6 +84,7 @@
     }
     pillars.forEach(p => p.x -= SPEED + Math.min(2, score*0.04));
     pillars = pillars.filter(p => p.x > -PW);
+    stars.forEach(s => { s.x -= s.r * 0.35; if (s.x < -4) { s.x = W + 4; s.y = Math.random()*H; } });
     // skor + çarpışma
     pillars.forEach(p => {
       if (!p.passed && p.x + PW < 80 - 18) {
@@ -118,6 +119,14 @@
       drawPillar(p.x, p.top + GAP, PW, H - p.top - GAP);
     });
 
+    // roket alevi
+    if (!waiting) {
+      const fl = 10 + Math.random()*10;
+      const g2 = ctx.createRadialGradient(80-26, ry+8, 1, 80-26, ry+8, fl+8);
+      g2.addColorStop(0, "rgba(255,200,60,.95)"); g2.addColorStop(.5, "rgba(255,120,30,.6)"); g2.addColorStop(1, "rgba(255,80,0,0)");
+      ctx.fillStyle = g2;
+      ctx.beginPath(); ctx.arc(80-26, ry+8, fl+8, 0, 7); ctx.fill();
+    }
     // roket
     ctx.save();
     ctx.translate(80, ry);

@@ -84,6 +84,7 @@
     document.getElementById("lives").textContent = lives;
   }
 
+  const bgS = Array.from({length:30}, (_,i) => ({ x:(i*131)%420, y:(i*89)%560, r:(i%3)*0.8+0.6 }));
   function loop(ts) {
     if (!running) return;
     if (!lastTs) lastTs = ts;
@@ -100,6 +101,9 @@
     }
 
     ctx.clearRect(0,0,W,H);
+    // arka plan yıldızları
+    ctx.fillStyle = "rgba(255,255,255,.22)";
+    bgS.forEach(s => { ctx.beginPath(); ctx.arc(s.x, (s.y + ts*0.01*s.r) % H, s.r, 0, 7); ctx.fill(); });
 
     // ışıltılar
     sparkles = sparkles.filter(s => (s.a -= dt*0.003) > 0);

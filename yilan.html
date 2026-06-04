@@ -42,6 +42,13 @@
   #over p { font-size:1.15rem; margin:4px 0; }
   #over button { margin-top:16px; border:none; border-radius:16px; padding:14px 32px; font-family:inherit;
     font-size:1.15rem; font-weight:bold; cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+
+  #joy { position:relative; width:128px; height:128px; border-radius:50%; margin-top:8px;
+    background:radial-gradient(circle at 50% 42%, rgba(255,255,255,.14), rgba(255,255,255,.05));
+    box-shadow:inset 0 0 18px rgba(0,0,0,.5), 0 4px 12px rgba(0,0,0,.35); touch-action:none; }
+  #joyKnob { position:absolute; width:54px; height:54px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #b39ddb, #5e35b1);
+    box-shadow:0 4px 10px rgba(0,0,0,.5); left:37px; top:37px; pointer-events:none; }
 </style>
 </head>
 <body>
@@ -57,12 +64,7 @@
   <div>🏆 Rekor: <span id="best">0</span></div>
 </div>
 <canvas id="cv" width="440" height="440"></canvas>
-<div class="pad">
-  <button class="up">⬆️</button>
-  <button class="left">⬅️</button>
-  <button class="down">⬇️</button>
-  <button class="right">➡️</button>
-</div>
+<div id="joy"><div id="joyKnob"></div></div>
 <div id="over">
   <h2 id="overTitle">💥 Oyun Bitti!</h2>
   <p>⭐ Puanın: <span id="finalScore">0</span></p>
@@ -118,8 +120,17 @@
     draw();
   }
 
+  const bgStars = Array.from({length:26}, (_,i) => ({ x:(i*97)%440, y:(i*61)%440, r:(i%3)+1 }));
   function draw() {
     ctx.clearRect(0,0,cv.width,cv.height);
+    // arka plan yıldızları
+    ctx.fillStyle = "rgba(255,255,255,.18)";
+    bgStars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r*0.7, 0, 7); ctx.fill(); });
+    // yem parlaması
+    const fg = ctx.createRadialGradient(food.x*CELL+CELL/2, food.y*CELL+CELL/2, 2, food.x*CELL+CELL/2, food.y*CELL+CELL/2, CELL*1.1);
+    fg.addColorStop(0, "rgba(255,217,61,.4)"); fg.addColorStop(1, "rgba(255,217,61,0)");
+    ctx.fillStyle = fg;
+    ctx.fillRect(food.x*CELL-CELL/2, food.y*CELL-CELL/2, CELL*2, CELL*2);
     // yıldız yemi
     ctx.font = (CELL*0.9) + "px serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -161,10 +172,30 @@
     nextDir = {x, y};
   }
 
-  document.querySelector(".up").onclick = () => setDir(0,-1);
-  document.querySelector(".down").onclick = () => setDir(0,1);
-  document.querySelector(".left").onclick = () => setDir(-1,0);
-  document.querySelector(".right").onclick = () => setDir(1,0);
+
+  // ---- JOYSTICK ----
+  const joyEl = document.getElementById("joy"), joyKnob = document.getElementById("joyKnob");
+  function joyHandle(e) {
+    const r = joyEl.getBoundingClientRect();
+    const t = e.touches ? e.touches[0] : e;
+    const dx = t.clientX - (r.left + r.width/2), dy = t.clientY - (r.top + r.height/2);
+    const m = Math.hypot(dx, dy);
+    const k = Math.min(1, 38 / (m || 1));
+    joyKnob.style.left = (37 + dx*k) + "px"; joyKnob.style.top = (37 + dy*k) + "px";
+    if (m > 16) {
+      if (Math.abs(dx) > Math.abs(dy)) setDir(Math.sign(dx), 0);
+      else setDir(0, Math.sign(dy));
+    }
+  }
+  function joyReset() { joyKnob.style.left = "37px"; joyKnob.style.top = "37px"; }
+  joyEl.addEventListener("touchstart", e => { e.preventDefault(); joyHandle(e); }, {passive:false});
+  joyEl.addEventListener("touchmove", e => { e.preventDefault(); joyHandle(e); }, {passive:false});
+  joyEl.addEventListener("touchend", joyReset);
+  let joyMouse = false;
+  joyEl.addEventListener("mousedown", e => { joyMouse = true; joyHandle(e); });
+  document.addEventListener("mousemove", e => { if (joyMouse) joyHandle(e); });
+  document.addEventListener("mouseup", () => { joyMouse = false; joyReset(); });
+
 
   document.addEventListener("keydown", e => {
     if (e.key === "ArrowUp") setDir(0,-1);

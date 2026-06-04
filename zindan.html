@@ -8,7 +8,6 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#2b1055">
-
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none; touch-action:manipulation; font-family:'Segoe UI',system-ui,sans-serif; }
   body { min-height:100vh; min-height:100dvh; background:#0c0a14; color:#ddd;
@@ -19,21 +18,42 @@
   .hud div { background:rgba(255,255,255,.1); border-radius:10px; padding:5px 10px; font-weight:bold; }
   .hpbar { width:min(94vw,520px); height:14px; background:#3a1f1f; border-radius:8px; overflow:hidden; margin-bottom:6px; }
   .hpbar div { height:100%; background:linear-gradient(90deg,#d23c3c,#e57373); transition:width .3s; }
-  canvas { background:#0c0a14; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.6); }
-  #log { width:min(94vw,520px); height:64px; overflow-y:auto; background:rgba(255,255,255,.06); border-radius:10px;
+  canvas#cv { background:#0c0a14; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.6); }
+  #log { width:min(94vw,520px); height:58px; overflow-y:auto; background:rgba(255,255,255,.06); border-radius:10px;
     padding:6px 10px; font-size:.78rem; line-height:1.5; margin-top:6px; }
   #log .good { color:#81c784; } #log .bad { color:#e57373; } #log .item { color:#ffd54f; }
-  .controls { display:flex; gap:14px; margin-top:8px; align-items:center; }
-  .pad { display:grid; grid-template-columns:repeat(3,58px); grid-template-rows:repeat(3,52px); gap:5px; }
-  .pad button { border:none; border-radius:12px; font-size:1.3rem; cursor:pointer;
-    background:rgba(255,255,255,.14); color:#fff; }
-  .pad button:active { background:rgba(255,255,255,.35); }
-  .pad .u{grid-column:2;grid-row:1} .pad .l{grid-column:1;grid-row:2} .pad .w{grid-column:2;grid-row:2}
-  .pad .r{grid-column:3;grid-row:2} .pad .d{grid-column:2;grid-row:3}
+  .controls { display:flex; gap:16px; margin-top:8px; align-items:center; justify-content:center; width:min(94vw,520px); }
+  /* joystick */
+  #joy { position:relative; width:128px; height:128px; border-radius:50%;
+    background:radial-gradient(circle at 50% 42%, rgba(255,255,255,.13), rgba(255,255,255,.05));
+    box-shadow:inset 0 0 18px rgba(0,0,0,.55), 0 4px 12px rgba(0,0,0,.4); touch-action:none; flex:none; }
+  #joyKnob { position:absolute; width:54px; height:54px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #8a76b8, #4a3d6e);
+    box-shadow:0 4px 10px rgba(0,0,0,.5); left:37px; top:37px; pointer-events:none; }
+  #joy::after { content:"✛"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; color:rgba(255,255,255,.16); pointer-events:none; }
   .acts { display:flex; flex-direction:column; gap:6px; }
-  .acts button { border:none; border-radius:12px; padding:11px 16px; font-weight:bold; font-size:.9rem;
+  .acts button { border:none; border-radius:12px; padding:10px 16px; font-weight:bold; font-size:.88rem;
     cursor:pointer; background:rgba(255,255,255,.16); color:#fff; }
   .acts button.gold { background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  .acts button.shopB { background:linear-gradient(135deg,#84d9a1,#4ec98a); color:#053; }
+  .panel { position:fixed; inset:0; background:rgba(8,6,15,.92); display:none; flex-direction:column;
+    align-items:center; justify-content:center; z-index:35; padding:18px; }
+  .panel.show { display:flex; }
+  .panel .box { background:#1d1830; border-radius:18px; padding:18px; width:min(92vw,440px); max-height:82vh; overflow-y:auto; }
+  .panel h3 { margin-bottom:10px; color:#ffd54f; }
+  .inv-item { display:flex; align-items:center; gap:10px; padding:8px; border-radius:10px; margin-bottom:6px;
+    background:rgba(255,255,255,.07); }
+  .inv-item .ic { font-size:1.5rem; position:relative; }
+  .inv-item .cnt { position:absolute; bottom:-4px; right:-8px; background:#ffd93d; color:#3b2660;
+    border-radius:10px; font-size:.62rem; font-weight:bold; padding:1px 5px; }
+  .inv-item .info { flex:1; text-align:left; font-size:.85rem; }
+  .inv-item button { border:none; border-radius:9px; padding:7px 13px; font-weight:bold; cursor:pointer;
+    background:#84d9a1; color:#053; font-size:.8rem; }
+  .inv-item button.cant { background:#555; color:#999; }
+  .equip { font-size:.82rem; margin-bottom:10px; color:#aaa; }
+  .closeX { margin-top:8px; border:none; border-radius:12px; padding:10px 24px; font-weight:bold; cursor:pointer;
+    background:#ffd93d; color:#5b3a00; font-size:1rem; }
   .screen { position:fixed; inset:0; background:rgba(8,6,15,.95); backdrop-filter:blur(6px); display:none;
     flex-direction:column; align-items:center; justify-content:center; z-index:40; text-align:center; padding:22px; }
   .screen.show { display:flex; }
@@ -41,18 +61,6 @@
   .screen p { font-size:1rem; margin:4px 0; max-width:420px; }
   .screen button { margin-top:14px; border:none; border-radius:14px; padding:13px 28px; font-weight:bold; font-size:1.05rem;
     cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
-  #invPanel { position:fixed; inset:0; background:rgba(8,6,15,.92); display:none; flex-direction:column;
-    align-items:center; justify-content:center; z-index:35; padding:18px; }
-  #invPanel.show { display:flex; }
-  #invPanel .box { background:#1d1830; border-radius:18px; padding:18px; width:min(92vw,420px); max-height:80vh; overflow-y:auto; }
-  #invPanel h3 { margin-bottom:10px; color:#ffd54f; }
-  .inv-item { display:flex; align-items:center; gap:10px; padding:8px; border-radius:10px; margin-bottom:6px;
-    background:rgba(255,255,255,.07); }
-  .inv-item .ic { font-size:1.5rem; }
-  .inv-item .info { flex:1; text-align:left; font-size:.85rem; }
-  .inv-item button { border:none; border-radius:9px; padding:7px 13px; font-weight:bold; cursor:pointer;
-    background:#84d9a1; color:#053; font-size:.8rem; }
-  .equip { font-size:.82rem; margin-bottom:10px; color:#aaa; }
 </style>
 </head>
 <body>
@@ -69,30 +77,37 @@
 <canvas id="cv"></canvas>
 <div id="log"></div>
 <div class="controls">
-  <div class="pad">
-    <button class="u">⬆️</button><button class="l">⬅️</button>
-    <button class="w">⏳</button><button class="r">➡️</button>
-    <button class="d">⬇️</button>
-  </div>
+  <div id="joy"><div id="joyKnob"></div></div>
   <div class="acts">
     <button class="gold" id="invBtn">🎒 Çanta</button>
+    <button class="shopB" id="shopBtn">🛒 Dükkân</button>
+    <button id="waitBtn">⏳ Bekle</button>
     <button id="descendBtn" style="display:none">🪜 Aşağı İn</button>
   </div>
 </div>
 
-<div id="invPanel">
+<div class="panel" id="invPanel">
   <div class="box">
     <h3>🎒 Çanta</h3>
     <div class="equip" id="equipInfo"></div>
     <div id="invList"></div>
-    <button class="screen-btn" style="margin-top:8px;border:none;border-radius:12px;padding:10px 22px;font-weight:bold;cursor:pointer;background:#ffd93d;color:#5b3a00" onclick="closeInv()">Kapat</button>
+    <button class="closeX" onclick="closeInv()">Kapat</button>
+  </div>
+</div>
+
+<div class="panel" id="shopPanel">
+  <div class="box">
+    <h3>🛒 Hodu'nun Sihirli Dükkânı 🐯</h3>
+    <div style="font-size:.82rem;margin-bottom:10px;color:#aaa">Altının: <b id="shopGold" style="color:#ffd54f">0</b> 💰</div>
+    <div id="shopList"></div>
+    <button class="closeX" onclick="closeShop()">Kapat</button>
   </div>
 </div>
 
 <div class="screen show" id="introScreen">
   <h2>🗡️ Zindan</h2>
   <p>8 katlı zindanın dibindeki Ejderhayı yen! Her kat rastgele üretilir.</p>
-  <p style="opacity:.7;font-size:.85rem">D-pad ile yürü · düşmana doğru yürü = saldır · ⏳ = bekle<br>İksir topla, ekipman kuşan, seviye atla.</p>
+  <p style="opacity:.7;font-size:.85rem">🕹️ Joystick ile yürü (basılı tut = devam) · düşmana doğru yürü = saldır<br>💰 Altın topla, 🛒 dükkândan güçlen, seviye atla!</p>
   <button onclick="newRun()">⚔️ Maceraya Başla</button>
 </div>
 <div class="screen" id="deadScreen">
@@ -110,12 +125,10 @@
 /* ============ ZİNDAN ÜRETİCİ ============ */
 const GEN = (() => {
   const W = 36, H = 24;
-
   function rng(seed) {
     let s = seed >>> 0;
     return () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };
   }
-
   function generate(seedVal) {
     const rnd = rng(seedVal);
     const ri = n => Math.floor(rnd() * n);
@@ -131,7 +144,6 @@ const GEN = (() => {
         for (let yy = y; yy < y+h; yy++) for (let xx = x; xx < x+w; xx++) map[yy][xx] = '.';
       }
       if (rooms.length < 4) continue;
-      // koridorlar: ardışık odaları L şeklinde bağla
       for (let i = 1; i < rooms.length; i++) {
         const a = rooms[i-1], b = rooms[i];
         let x = a.cx, y = a.cy;
@@ -139,7 +151,6 @@ const GEN = (() => {
         while (y !== b.cy) { map[y][x] = '.'; y += Math.sign(b.cy - y); }
         map[y][x] = '.';
       }
-      // bağlantı kontrolü (flood)
       const start = rooms[0];
       const seen = new Set([start.cx + ',' + start.cy]);
       const stack = [[start.cx, start.cy]];
@@ -154,22 +165,21 @@ const GEN = (() => {
       }
       let floorCount = 0;
       for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (map[y][x] === '.') floorCount++;
-      if (seen.size !== floorCount) continue; // bağlı değil, tekrar
+      if (seen.size !== floorCount) continue;
       return { map, rooms, W, H };
     }
     return null;
   }
-
   return { generate, W, H };
 })();
 
 /* ============ OYUN ============ */
 const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
-const VIEW_W = 17, VIEW_H = 11; // görünür alan (tek sayı = merkezde oyuncu)
+const VIEW_W = 17, VIEW_H = 11;
 let TILE = 28;
 
 function sizeCanvas() {
-  TILE = Math.max(20, Math.min(34, Math.floor(Math.min((window.innerWidth-12)/VIEW_W, (window.innerHeight-330)/VIEW_H))));
+  TILE = Math.max(20, Math.min(34, Math.floor(Math.min((window.innerWidth-12)/VIEW_W, (window.innerHeight-360)/VIEW_H))));
   cv.width = VIEW_W * TILE; cv.height = VIEW_H * TILE;
 }
 
@@ -191,15 +201,31 @@ const ARMORS = [
   { em:'🛡️', name:'Plaka Zırh', def:5 }, { em:'💠', name:'Kristal Zırh', def:8 }
 ];
 
+/* ---- DÜKKÂN ---- */
+const SHOP = [
+  { id:'potion', em:'🧪', nm:'Büyük İksir', desc:'+25 can (çantana girer)',
+    price:() => 15, buy:() => { P.inv.push({type:'potion', em:'🧪', name:'Büyük İksir', heal:25}); } },
+  { id:'bomb', em:'💣', nm:'Patlama Parşömeni', desc:'Görünen tüm düşmanlara 30 hasar (çantana girer)',
+    price:() => 30, buy:() => { P.inv.push({type:'bomb', em:'💣', name:'Patlama Parşömeni', dmg:30}); } },
+  { id:'map', em:'🗺️', nm:'Kat Haritası', desc:'Bu katın tamamını gösterir (hemen kullanılır)',
+    price:() => 20, buy:() => { for (let y=0;y<level.H;y++) for (let x=0;x<level.W;x++) if (level.map[y][x]==='.') seen[y][x]=true; log('🗺️ Kat haritası açıldı!','item'); } },
+  { id:'guc', em:'💪', nm:'Güç Tılsımı', desc:'+1 saldırı (KALICI)',
+    price:() => 30 + 15 * (P.bought.guc||0), buy:() => { P.baseAtk++; P.bought.guc=(P.bought.guc||0)+1; } },
+  { id:'kor', em:'🛡️', nm:'Koruma Tılsımı', desc:'+1 savunma (KALICI)',
+    price:() => 30 + 15 * (P.bought.kor||0), buy:() => { P.baseDef++; P.bought.kor=(P.bought.kor||0)+1; } },
+  { id:'can', em:'❤️', nm:'Yaşam Kristali', desc:'+10 maks. can ve +10 can (KALICI)',
+    price:() => 25 + 10 * (P.bought.can||0), buy:() => { P.maxHp += 10; P.hp = Math.min(P.maxHp, P.hp+10); P.bought.can=(P.bought.can||0)+1; } }
+];
+
 let P, floor, level, enemies, items, stairs, seen, visible, gameOn = false, turnLock = false;
 
 function newRun() {
   P = { x:0, y:0, hp:30, maxHp:30, baseAtk:5, baseDef:1, lvl:1, xp:0, xpNext:20, gold:0,
-    weapon:null, armor:null, inv:[{type:'potion', em:'🧪', name:'Küçük İksir', heal:15}] };
+    weapon:null, armor:null, bought:{}, inv:[{type:'potion', em:'🧪', name:'Küçük İksir', heal:15}] };
   floor = 1;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
   document.getElementById('log').innerHTML = '';
-  log('Zindana giriyorsun... Dikkatli ol!', 'item');
+  log('Zindana giriyorsun... 🛒 Dükkânı unutma!', 'item');
   gameOn = true;
   buildFloor();
 }
@@ -209,10 +235,8 @@ function buildFloor() {
   level = GEN.generate(Date.now() + floor * 7919 + Math.floor(Math.random()*99999));
   const rooms = level.rooms;
   P.x = rooms[0].cx; P.y = rooms[0].cy;
-  // merdiven son odada
   const last = rooms[rooms.length-1];
   stairs = { x: last.cx, y: last.cy };
-  // düşmanlar
   enemies = [];
   const pool = ENEMY_TYPES.filter(e => e.minF <= floor && e.minF >= Math.max(1, floor - 3));
   const count = 4 + floor;
@@ -226,13 +250,11 @@ function buildFloor() {
     enemies.push({ ...t, x:ex, y:ey, hp: Math.round(t.hp*sc), maxHp: Math.round(t.hp*sc),
       atk: Math.round(t.atk*sc), xp: Math.round(t.xp*sc), awake:false });
   }
-  // 8. katta boss
   if (floor === 8) {
     const mid = rooms[rooms.length-1];
     enemies.push({ em:'🐲', name:'EJDERHA', x: mid.cx, y: Math.max(mid.y, mid.cy-1),
-      hp:160, maxHp:160, atk:22, xp:0, awake:false, boss:true });
+      hp:170, maxHp:170, atk:22, xp:0, awake:false, boss:true });
   }
-  // eşyalar
   items = [];
   const drop = (type, payload) => {
     for (let tries = 0; tries < 30; tries++) {
@@ -246,24 +268,22 @@ function buildFloor() {
   };
   for (let i = 0; i < 2 + Math.floor(Math.random()*2); i++)
     drop('potion', { em:'🧪', name:'İksir', heal: 12 + floor*3 });
-  for (let i = 0; i < 2; i++)
-    drop('gold', { em:'💰', name:'Altın', amt: 5 + Math.floor(Math.random()*10) + floor*2 });
-  if (Math.random() < 0.75) {
+  for (let i = 0; i < 3; i++)
+    drop('gold', { em:'💰', name:'Altın', amt: 8 + Math.floor(Math.random()*8) + floor*2 });
+  if (Math.random() < 0.7) {
     const wi = Math.min(WEAPONS.length-1, Math.floor((floor-1)/2) + (Math.random()<.3?1:0));
     drop('weapon', { ...WEAPONS[wi] });
   }
-  if (Math.random() < 0.6) {
+  if (Math.random() < 0.55) {
     const ai = Math.min(ARMORS.length-1, Math.floor((floor-1)/2));
     drop('armor', { ...ARMORS[ai] });
   }
-  // görüş
   seen = Array.from({length:level.H}, () => new Array(level.W).fill(false));
   computeFov();
   updateHud(); render();
   log(`🏰 Kat ${floor}` + (floor === 8 ? ' — EJDERHANIN İNİ! 🐲' : ''), floor === 8 ? 'bad' : 'item');
 }
 
-/* ---------- görüş (basit raycast) ---------- */
 function computeFov() {
   visible = Array.from({length:level.H}, () => new Array(level.W).fill(false));
   const R = 6;
@@ -281,7 +301,6 @@ function computeFov() {
   }
 }
 
-/* ---------- tur ---------- */
 function tryMove(dx, dy) {
   if (!gameOn || turnLock) return;
   const nx = P.x + dx, ny = P.y + dy;
@@ -290,25 +309,26 @@ function tryMove(dx, dy) {
   const foe = enemies.find(e => e.x === nx && e.y === ny);
   if (foe) { attack(foe); return; }
   P.x = nx; P.y = ny;
-  // eşya al
   const it = items.findIndex(i => i.x === nx && i.y === ny);
   if (it >= 0) pickUp(items.splice(it, 1)[0]);
   endTurn();
 }
+window._z = () => ({ P, floor, enemies, items, level, tryMove, gameOn });
 
 function attack(foe) {
   const atk = totalAtk();
   const dmg = Math.max(1, atk + Math.floor(Math.random()*4) - 1);
   foe.hp -= dmg;
   log(`⚔️ ${foe.name}'a ${dmg} hasar!`, 'good');
-  if (foe.hp <= 0) {
-    log(`💥 ${foe.name} öldü!` + (foe.boss ? '' : ` +${foe.xp} XP`), 'good');
-    enemies = enemies.filter(e => e !== foe);
-    if (foe.boss) { winGame(); return; }
-    gainXp(foe.xp);
-    if (Math.random() < 0.25) { P.gold += 3 + Math.floor(Math.random()*6); updateHud(); }
-  }
+  if (foe.hp <= 0) killFoe(foe);
   endTurn();
+}
+function killFoe(foe) {
+  log(`💥 ${foe.name} öldü!` + (foe.boss ? '' : ` +${foe.xp} XP`), 'good');
+  enemies = enemies.filter(e => e !== foe);
+  if (foe.boss) { winGame(); return; }
+  gainXp(foe.xp);
+  if (Math.random() < 0.3) { const g = 4 + Math.floor(Math.random()*5) + floor; P.gold += g; log('💰 +' + g + ' altın!', 'item'); updateHud(); }
 }
 
 function gainXp(n) {
@@ -326,15 +346,12 @@ function gainXp(n) {
 
 function pickUp(it) {
   if (it.type === 'gold') { P.gold += it.amt; log(`💰 ${it.amt} altın!`, 'item'); }
-  else if (it.type === 'potion') { P.inv.push(it); log(`🧪 ${it.name} alındı (çantada)`, 'item'); }
-  else if (it.type === 'weapon') { P.inv.push(it); log(`${it.em} ${it.name} bulundu!`, 'item'); }
-  else if (it.type === 'armor') { P.inv.push(it); log(`${it.em} ${it.name} bulundu!`, 'item'); }
+  else { P.inv.push(it); log(`${it.em} ${it.name} alındı (çantada)`, 'item'); }
   updateHud();
 }
 
 function endTurn() {
   turnLock = true;
-  // düşman turları
   for (const e of enemies) {
     const dist = Math.abs(e.x - P.x) + Math.abs(e.y - P.y);
     if (!e.awake) {
@@ -347,7 +364,6 @@ function endTurn() {
       log(`${e.em} ${e.name} sana ${dmg} hasar verdi!`, 'bad');
       if (P.hp <= 0) { die(e); return; }
     } else if (dist <= 9) {
-      // basit kovalama: oyuncuya yaklaşan geçerli adım
       const opts = [[Math.sign(P.x-e.x),0],[0,Math.sign(P.y-e.y)]].filter(([dx,dy]) => dx||dy);
       if (Math.random() < 0.5) opts.reverse();
       for (const [dx,dy] of opts) {
@@ -364,16 +380,14 @@ function endTurn() {
   turnLock = false;
 }
 
-function wait() { if (gameOn && !turnLock) { log('⏳ Bekledin.', ''); endTurn(); } }
-
+function waitTurn() { if (gameOn && !turnLock) { endTurn(); } }
 function descend() {
   if (P.x === stairs.x && P.y === stairs.y) {
     floor++;
-    if (floor > 8) return; // olmaz ama güvenlik
+    if (floor > 8) return;
     buildFloor();
   }
 }
-
 function totalAtk() { return P.baseAtk + (P.weapon ? P.weapon.atk : 0); }
 function totalDef() { return P.baseDef + (P.armor ? P.armor.def : 0); }
 
@@ -383,7 +397,6 @@ function die(e) {
     `${e.em} ${e.name} seni ${floor}. katta yendi. Seviye ${P.lvl}'e ulaşmıştın, ${P.gold} altın topladın.`;
   document.getElementById('deadScreen').classList.add('show');
 }
-
 function winGame() {
   gameOn = false;
   document.getElementById('winMsg').textContent =
@@ -391,22 +404,32 @@ function winGame() {
   document.getElementById('winScreen').classList.add('show');
 }
 
-/* ---------- envanter ---------- */
+/* ---------- envanter (GRUPLU) ---------- */
 function openInv() {
   const list = document.getElementById('invList'); list.innerHTML = '';
   document.getElementById('equipInfo').innerHTML =
     `Silah: ${P.weapon ? P.weapon.em + ' ' + P.weapon.name + ' (+' + P.weapon.atk + ')' : '— yok'} · ` +
     `Zırh: ${P.armor ? P.armor.em + ' ' + P.armor.name + ' (+' + P.armor.def + ')' : '— yok'}`;
   if (!P.inv.length) list.innerHTML = '<p style="opacity:.6;font-size:.85rem">Çanta boş.</p>';
-  P.inv.forEach((it, i) => {
+  // grupla
+  const groups = new Map();
+  P.inv.forEach((it, idx) => {
+    const k = it.type + '|' + it.name + '|' + (it.heal||it.atk||it.def||it.dmg||'');
+    if (!groups.has(k)) groups.set(k, { it, count:0, firstIdx: idx });
+    groups.get(k).count++;
+  });
+  groups.forEach(g => {
+    const it = g.it;
     const d = document.createElement('div'); d.className = 'inv-item';
     let desc = '', btnTxt = '';
     if (it.type === 'potion') { desc = `+${it.heal} can`; btnTxt = 'İç'; }
+    else if (it.type === 'bomb') { desc = `Görünen düşmanlara ${it.dmg} hasar`; btnTxt = 'Kullan'; }
     else if (it.type === 'weapon') { desc = `Saldırı +${it.atk}`; btnTxt = 'Kuşan'; }
     else if (it.type === 'armor') { desc = `Savunma +${it.def}`; btnTxt = 'Giy'; }
-    d.innerHTML = `<span class="ic">${it.em}</span><span class="info"><b>${it.name}</b><br>${desc}</span>`;
+    d.innerHTML = `<span class="ic">${it.em}${g.count > 1 ? `<span class="cnt">×${g.count}</span>` : ''}</span>
+      <span class="info"><b>${it.name}</b>${g.count > 1 ? ' <span style="opacity:.6">(×' + g.count + ')</span>' : ''}<br>${desc}</span>`;
     const b = document.createElement('button'); b.textContent = btnTxt;
-    b.onclick = () => useItem(i);
+    b.onclick = () => useItemAt(g.firstIdx);
     d.appendChild(b);
     list.appendChild(d);
   });
@@ -415,12 +438,21 @@ function openInv() {
 function closeInv() { document.getElementById('invPanel').classList.remove('show'); }
 window.closeInv = closeInv;
 
-function useItem(i) {
+function useItemAt(i) {
   const it = P.inv[i];
+  if (!it) return;
   if (it.type === 'potion') {
     P.hp = Math.min(P.maxHp, P.hp + it.heal);
     log(`🧪 İksir içtin: +${it.heal} can`, 'good');
     P.inv.splice(i, 1);
+  } else if (it.type === 'bomb') {
+    let hit = 0;
+    [...enemies].forEach(e => {
+      if (visible[e.y] && visible[e.y][e.x]) { e.hp -= it.dmg; hit++; if (e.hp <= 0) killFoe(e); }
+    });
+    log(`💣 BOOM! ${hit} düşmana ${it.dmg} hasar!`, 'good');
+    P.inv.splice(i, 1);
+    render();
   } else if (it.type === 'weapon') {
     if (P.weapon) P.inv.push(P.weapon);
     P.weapon = it; P.inv.splice(P.inv.indexOf(it), 1);
@@ -432,6 +464,34 @@ function useItem(i) {
   }
   updateHud(); openInv();
 }
+
+/* ---------- DÜKKÂN ---------- */
+function openShop() {
+  document.getElementById('shopGold').textContent = P.gold;
+  const list = document.getElementById('shopList'); list.innerHTML = '';
+  SHOP.forEach(s => {
+    const price = s.price();
+    const can = P.gold >= price;
+    const d = document.createElement('div'); d.className = 'inv-item';
+    d.innerHTML = `<span class="ic">${s.em}</span>
+      <span class="info"><b>${s.nm}</b><br>${s.desc}</span>`;
+    const b = document.createElement('button');
+    b.textContent = '💰' + price;
+    if (!can) b.className = 'cant';
+    b.onclick = () => {
+      if (P.gold < s.price()) { log('💸 Yeterli altın yok!', 'bad'); return; }
+      P.gold -= s.price();
+      s.buy();
+      log(`🛒 ${s.nm} alındı!`, 'item');
+      updateHud(); render(); openShop();
+    };
+    d.appendChild(b);
+    list.appendChild(d);
+  });
+  document.getElementById('shopPanel').classList.add('show');
+}
+function closeShop() { document.getElementById('shopPanel').classList.remove('show'); }
+window.closeShop = closeShop;
 
 /* ---------- hud + log ---------- */
 function updateHud() {
@@ -446,14 +506,13 @@ function updateHud() {
   document.getElementById('descendBtn').style.display =
     (gameOn && P.x === stairs.x && P.y === stairs.y && floor < 8) ? 'block' : 'none';
 }
-
 function log(msg, cls) {
   const el = document.getElementById('log');
   el.innerHTML += `<div class="${cls||''}">${msg}</div>`;
   el.scrollTop = el.scrollHeight;
 }
 
-/* ---------- çizim ---------- */
+/* ---------- GELISMIS CIZIM ---------- */
 function render() {
   ctx.clearRect(0, 0, cv.width, cv.height);
   const ox = P.x - (VIEW_W>>1), oy = P.y - (VIEW_H>>1);
@@ -464,63 +523,160 @@ function render() {
     if (!seen[y][x]) continue;
     const lit = visible[y][x];
     const px = vx*TILE, py = vy*TILE;
+    const dist = Math.max(Math.abs(x-P.x), Math.abs(y-P.y));
+    const bright = lit ? Math.max(0.45, 1 - dist*0.09) : 0.22;
     if (level.map[y][x] === '#') {
-      ctx.fillStyle = lit ? '#3d3454' : '#221d30';
-      ctx.fillRect(px, py, TILE, TILE);
-      ctx.fillStyle = lit ? '#2a2440' : '#191525';
-      ctx.fillRect(px+2, py+2, TILE-4, TILE-4);
+      const topH = TILE * 0.62;
+      ctx.fillStyle = shade('#5a4d80', bright);
+      ctx.fillRect(px, py, TILE, topH);
+      ctx.fillStyle = shade('#352b52', bright);
+      ctx.fillRect(px, py + topH, TILE, TILE - topH);
+      ctx.fillStyle = shade('#6b5e94', bright * 0.9);
+      ctx.fillRect(px + 2, py + 2, TILE - 4, 3);
+      ctx.fillStyle = 'rgba(0,0,0,.25)';
+      ctx.fillRect(px, py + topH - 2, TILE, 2);
+      ctx.fillStyle = shade('#2a2244', bright);
+      if ((x + y) % 2 === 0) ctx.fillRect(px + TILE/2 - 1, py + 4, 2, topH - 8);
     } else {
-      ctx.fillStyle = lit ? '#1b1726' : '#120f1a';
+      const base = (x + y) % 2 === 0 ? '#241e35' : '#211b30';
+      ctx.fillStyle = shade(base, bright + 0.15);
       ctx.fillRect(px, py, TILE, TILE);
+      ctx.strokeStyle = 'rgba(0,0,0,.18)';
+      ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
+      const h = (x*73856093 ^ y*19349663) >>> 0;
+      if (h % 7 === 0) {
+        ctx.fillStyle = shade('#3a3252', bright);
+        const sx = px + (h % 5) * 3 + 4, sy = py + ((h>>3) % 5) * 3 + 4;
+        ctx.fillRect(sx, sy, 3, 2);
+      }
     }
   }
-  const drawAt = (x, y, em, size) => {
+  const drawAt = (x, y, em, size, withShadow) => {
     const vx = x - ox, vy = y - oy;
     if (vx<0||vy<0||vx>=VIEW_W||vy>=VIEW_H) return;
-    ctx.font = (size||TILE*0.72) + 'px serif';
-    ctx.fillText(em, vx*TILE + TILE/2, vy*TILE + TILE/2 + 1);
+    if (withShadow) {
+      ctx.fillStyle = 'rgba(0,0,0,.4)';
+      ctx.beginPath();
+      ctx.ellipse(vx*TILE + TILE/2, vy*TILE + TILE*0.82, TILE*0.3, TILE*0.12, 0, 0, 7);
+      ctx.fill();
+    }
+    ctx.font = (size||TILE*0.74) + 'px serif';
+    ctx.fillText(em, vx*TILE + TILE/2, vy*TILE + TILE/2);
   };
-  // merdiven
-  if (seen[stairs.y][stairs.x]) drawAt(stairs.x, stairs.y, '🪜');
-  // eşyalar
-  items.forEach(i => { if (visible[i.y][i.x]) drawAt(i.x, i.y, i.em); });
-  // düşmanlar + can barı
+  if (seen[stairs.y][stairs.x]) {
+    const vx = stairs.x - ox, vy = stairs.y - oy;
+    if (vx>=0&&vy>=0&&vx<VIEW_W&&vy<VIEW_H) {
+      const g = ctx.createRadialGradient(vx*TILE+TILE/2, vy*TILE+TILE/2, 2, vx*TILE+TILE/2, vy*TILE+TILE/2, TILE*0.7);
+      g.addColorStop(0, 'rgba(255,217,61,.45)'); g.addColorStop(1, 'rgba(255,217,61,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(vx*TILE - 4, vy*TILE - 4, TILE + 8, TILE + 8);
+    }
+    drawAt(stairs.x, stairs.y, '\u{1FA9C}');
+  }
+  items.forEach(i => { if (visible[i.y][i.x]) drawAt(i.x, i.y, i.em, TILE*0.62, true); });
   enemies.forEach(e => {
     if (!visible[e.y][e.x]) return;
-    drawAt(e.x, e.y, e.em, e.boss ? TILE*0.95 : undefined);
+    drawAt(e.x, e.y, e.em, e.boss ? TILE*0.98 : TILE*0.74, true);
     const vx = e.x - ox, vy = e.y - oy;
-    const w = TILE-8, ratio = Math.max(0, e.hp/e.maxHp);
-    ctx.fillStyle = '#000'; ctx.fillRect(vx*TILE+4, vy*TILE+1, w, 3);
-    ctx.fillStyle = ratio > .5 ? '#66bb6a' : '#ef5350';
-    ctx.fillRect(vx*TILE+4, vy*TILE+1, w*ratio, 3);
+    const w = TILE - 8, ratio = Math.max(0, e.hp/e.maxHp);
+    ctx.fillStyle = 'rgba(0,0,0,.7)';
+    roundRect(vx*TILE+4, vy*TILE+1, w, 4, 2);
+    ctx.fillStyle = ratio > .5 ? '#66bb6a' : ratio > .25 ? '#ffc107' : '#ef5350';
+    roundRect(vx*TILE+4, vy*TILE+1, Math.max(2, w*ratio), 4, 2);
   });
-  // oyuncu
-  drawAt(P.x, P.y, '🧝');
+  {
+    const vx = P.x - ox, vy = P.y - oy;
+    const g = ctx.createRadialGradient(vx*TILE+TILE/2, vy*TILE+TILE/2, 2, vx*TILE+TILE/2, vy*TILE+TILE/2, TILE*0.9);
+    g.addColorStop(0, 'rgba(140,200,255,.18)'); g.addColorStop(1, 'rgba(140,200,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(vx*TILE - 6, vy*TILE - 6, TILE + 12, TILE + 12);
+  }
+  drawAt(P.x, P.y, '\u{1F9DD}', TILE*0.78, true);
+  const vg = ctx.createRadialGradient(cv.width/2, cv.height/2, cv.height*0.35, cv.width/2, cv.height/2, cv.height*0.85);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, cv.width, cv.height);
+}
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.min(255, ((n>>16)&255) * f) | 0;
+  const g = Math.min(255, ((n>>8)&255) * f) | 0;
+  const b = Math.min(255, (n&255) * f) | 0;
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
+}
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r);
+  ctx.fill();
 }
 
-/* ---------- kontroller ---------- */
-document.querySelector('.pad .u').onclick = () => tryMove(0,-1);
-document.querySelector('.pad .d').onclick = () => tryMove(0,1);
-document.querySelector('.pad .l').onclick = () => tryMove(-1,0);
-document.querySelector('.pad .r').onclick = () => tryMove(1,0);
-document.querySelector('.pad .w').onclick = wait;
+/* ---------- JOYSTICK ---------- */
+const joy = document.getElementById('joy');
+const knob = document.getElementById('joyKnob');
+let joyDir = null, joyTimer = null;
+function joyVec(e) {
+  const r = joy.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  const dx = t.clientX - (r.left + r.width/2);
+  const dy = t.clientY - (r.top + r.height/2);
+  return { dx, dy, mag: Math.hypot(dx, dy) };
+}
+function setKnob(dx, dy) {
+  const max = 38;
+  const m = Math.hypot(dx, dy) || 1;
+  const k = Math.min(1, max / m);
+  knob.style.left = (37 + dx*k) + 'px';
+  knob.style.top = (37 + dy*k) + 'px';
+}
+function joyUpdate(e) {
+  const v = joyVec(e);
+  setKnob(v.dx, v.dy);
+  if (v.mag < 18) { joyDir = null; return; }
+  joyDir = Math.abs(v.dx) > Math.abs(v.dy)
+    ? [Math.sign(v.dx), 0] : [0, Math.sign(v.dy)];
+}
+function joyStart(e) {
+  e.preventDefault();
+  joyUpdate(e);
+  if (joyDir) tryMove(joyDir[0], joyDir[1]);
+  clearInterval(joyTimer);
+  joyTimer = setInterval(() => { if (joyDir) tryMove(joyDir[0], joyDir[1]); }, 190);
+}
+function joyEnd() {
+  joyDir = null;
+  clearInterval(joyTimer); joyTimer = null;
+  knob.style.left = '37px'; knob.style.top = '37px';
+}
+joy.addEventListener('touchstart', joyStart, {passive:false});
+joy.addEventListener('touchmove', function(e) { e.preventDefault(); joyUpdate(e); }, {passive:false});
+joy.addEventListener('touchend', joyEnd);
+joy.addEventListener('touchcancel', joyEnd);
+joy.addEventListener('mousedown', joyStart);
+document.addEventListener('mousemove', function(e) { if (joyTimer) joyUpdate(e); });
+document.addEventListener('mouseup', function() { if (joyTimer) joyEnd(); });
+
+/* ---------- diger kontroller ---------- */
 document.getElementById('invBtn').onclick = openInv;
+document.getElementById('shopBtn').onclick = openShop;
+document.getElementById('waitBtn').onclick = waitTurn;
 document.getElementById('descendBtn').onclick = descend;
 
-document.addEventListener('keydown', e => {
+document.addEventListener('keydown', function(e) {
   if (e.key === 'ArrowUp') tryMove(0,-1);
   else if (e.key === 'ArrowDown') tryMove(0,1);
   else if (e.key === 'ArrowLeft') tryMove(-1,0);
   else if (e.key === 'ArrowRight') tryMove(1,0);
-  else if (e.key === ' ') { e.preventDefault(); wait(); }
+  else if (e.key === ' ') { e.preventDefault(); waitTurn(); }
   else if (e.key === 'i') openInv();
+  else if (e.key === 's') openShop();
   else if (e.key === 'Enter') descend();
 });
 
-// kaydırma
 let tsx, tsy;
-cv.addEventListener('touchstart', e => { tsx = e.touches[0].clientX; tsy = e.touches[0].clientY; }, {passive:true});
-cv.addEventListener('touchend', e => {
+cv.addEventListener('touchstart', function(e) { tsx = e.touches[0].clientX; tsy = e.touches[0].clientY; }, {passive:true});
+cv.addEventListener('touchend', function(e) {
   const dx = e.changedTouches[0].clientX - tsx, dy = e.changedTouches[0].clientY - tsy;
   if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
   if (Math.abs(dx) > Math.abs(dy)) tryMove(Math.sign(dx), 0);
@@ -528,7 +684,7 @@ cv.addEventListener('touchend', e => {
 }, {passive:true});
 
 sizeCanvas();
-window.addEventListener('resize', () => { sizeCanvas(); if (level) render(); });
+window.addEventListener('resize', function() { sizeCanvas(); if (level) render(); });
 
 if (typeof module !== 'undefined') module.exports = GEN;
 </script>

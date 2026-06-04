@@ -212,8 +212,16 @@
   }
 
   // kontroller
-  document.querySelectorAll(".pad button").forEach(b => b.onclick = () => {
-    const [dx,dy] = b.dataset.d.split(",").map(Number); move(dx,dy);
+  document.querySelectorAll(".pad button").forEach(b => {
+    const [dx,dy] = b.dataset.d.split(",").map(Number);
+    let rep = null;
+    const start = e => { e.preventDefault(); move(dx,dy);
+      clearInterval(rep); rep = setInterval(() => move(dx,dy), 220); };
+    const stop = () => { clearInterval(rep); rep = null; };
+    b.addEventListener("touchstart", start, {passive:false});
+    b.addEventListener("touchend", stop); b.addEventListener("touchcancel", stop);
+    b.addEventListener("mousedown", start);
+    b.addEventListener("mouseup", stop); b.addEventListener("mouseleave", stop);
   });
   document.getElementById("undoBtn").onclick = undo;
   document.getElementById("restartBtn").onclick = () => loadLevel(cur);

@@ -232,6 +232,17 @@
   .cert-card .cinfo span { display:block; font-size:.72rem; opacity:.75; font-weight:normal; }
   .cert-card button { border:none; border-radius:11px; padding:10px 14px; font-weight:bold; font-size:.82rem;
     cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+
+  /* v7: kelime yagmuru */
+  #rainArea { position:relative; width:100%; height:300px; background:linear-gradient(180deg,#2a1f4d,#4a3a7a);
+    border-radius:18px; overflow:hidden; margin-top:8px; box-shadow:inset 0 0 30px rgba(0,0,0,.4); }
+  .rain-word { position:absolute; background:rgba(255,255,255,.96); color:#3b2660; font-weight:bold;
+    font-size:1.3rem; padding:8px 16px; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,.4); white-space:nowrap; }
+  .rain-opts { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; width:100%; margin-top:10px; }
+  .rain-opts button { border:none; border-radius:13px; padding:14px 6px; font-size:.92rem; font-weight:bold;
+    cursor:pointer; background:rgba(255,255,255,.92); color:#3b2660; }
+  .rain-opts button.ok { background:#7ed957; color:#0b3d10; }
+  .rain-opts button.no { background:#ef9a9a; color:#5d1010; }
 </style>
 </head>
 <body>
@@ -272,6 +283,7 @@
     <div class="mod" data-go="path"><span class="ico">🗺️</span><h3>Yolculuk</h3><p>Öğrenme haritan</p></div>
     <div class="mod" data-go="stories"><span class="ico">📕</span><h3>Hikâyeler</h3><p>Satır satır sesli okuma</p></div>
     <div class="mod" data-go="certs"><span class="ico">🎖️</span><h3>Sertifikalarım</h3><p>Kazan, indir, duvara as!</p></div>
+    <div class="mod" data-go="rain" style="border-color:rgba(130,220,255,.6);background:rgba(80,160,220,.18)"><span class="ico">🌧️</span><h3>Kelime Yağmuru</h3><p>Düşen kelimeyi yakala! (oyun)</p></div>
   </div>
   <div id="nextStep">🎓 ...</div>
   <div id="wotd" style="width:100%;background:rgba(255,255,255,.15);border-radius:16px;padding:12px 14px;margin-top:4px;text-align:center;cursor:pointer">
@@ -480,6 +492,13 @@
   </div>
   <div id="certList" style="width:100%;margin-top:10px"></div>
   <canvas id="certCv" width="1200" height="850" style="display:none"></canvas>
+</div>
+
+<!-- KELIME YAGMURU -->
+<div class="page" id="rain">
+  <div class="q-head"><span>⭐ <span id="rnScore">0</span></span><span>·</span><span id="rnHearts">❤️❤️❤️</span><span>·</span><span>🏆 <span id="rnBest">0</span></span></div>
+  <div id="rainArea"></div>
+  <div class="rain-opts" id="rainOpts"></div>
 </div>
 
 <div class="screen" id="resultScreen">
@@ -2075,6 +2094,99 @@ go = function(p, push) {
   if (p === "certs") renderCerts();
 };
 Object.assign(TITLES, { stories:"📕 Hikâyeler", storyRead:"📕 Hikâye", certs:"🎖️ Sertifikalarım" });
+document.querySelectorAll(".mod[data-go]").forEach(m => { m.onclick = () => go(m.dataset.go); });
+
+
+
+/* ================= v7: KELIME YAGMURU ================= */
+let RN = null, rnRaf = null;
+function rainWords() {
+  const out = [];
+  DECKS.forEach(d => d.words.forEach(w => { if (getSrs(wordKey(d.id, w[0])).box > 0) out.push(w); }));
+  if (out.length < 10) out.push(...DECKS[0].words, ...DECKS[3].words);
+  return out;
+}
+function startRain() {
+  cancelAnimationFrame(rnRaf);
+  if (!S.rainBest) S.rainBest = 0;
+  RN = { score:0, hearts:3, speed:0.030, pool:rainWords(), el:null, word:null, y:-50, last:0, over:false };
+  document.getElementById("rnScore").textContent = 0;
+  document.getElementById("rnBest").textContent = S.rainBest;
+  document.getElementById("rnHearts").textContent = "❤️❤️❤️";
+  nextRainWord();
+  RN.last = 0;
+  rnRaf = requestAnimationFrame(rainLoop);
+}
+function nextRainWord() {
+  const area = document.getElementById("rainArea");
+  area.innerHTML = "";
+  const w = RN.pool[Math.floor(Math.random()*RN.pool.length)];
+  RN.word = w; RN.y = -46;
+  const el = document.createElement("div");
+  el.className = "rain-word";
+  el.textContent = w[0];
+  el.style.left = (8 + Math.random()*52) + "%";
+  el.style.top = "-46px";
+  el.onclick = () => speak(w[0]);
+  area.appendChild(el);
+  RN.el = el;
+  speak(w[0], 0.85);
+  // şıklar
+  const wrong = RN.pool.filter(x => x[2] !== w[2]).sort(() => Math.random()-.5).slice(0,2);
+  const opts = [...wrong, w].sort(() => Math.random()-.5);
+  const box = document.getElementById("rainOpts"); box.innerHTML = "";
+  opts.forEach(o => {
+    const b = document.createElement("button");
+    b.textContent = o[2];
+    b.onclick = () => {
+      if (RN.over) return;
+      if (o[2] === w[2]) {
+        b.classList.add("ok");
+        RN.score++;
+        RN.speed = Math.min(0.11, RN.speed + 0.004);
+        document.getElementById("rnScore").textContent = RN.score;
+        setTimeout(nextRainWord, 250);
+      } else {
+        b.classList.add("no");
+        rainHurt();
+      }
+    };
+    box.appendChild(b);
+  });
+}
+function rainHurt() {
+  RN.hearts--;
+  document.getElementById("rnHearts").textContent = "❤️".repeat(Math.max(0,RN.hearts)) + "🖤".repeat(3-Math.max(0,RN.hearts));
+  if (RN.hearts <= 0) endRain();
+  else setTimeout(nextRainWord, 350);
+}
+function rainLoop(ts) {
+  if (!RN || RN.over) return;
+  if (!RN.last) RN.last = ts;
+  const dt = Math.min(50, ts - RN.last); RN.last = ts;
+  RN.y += RN.speed * dt * (1 + RN.score * 0.04);
+  if (RN.el) RN.el.style.top = RN.y + "px";
+  const areaH = document.getElementById("rainArea").clientHeight || 300;
+  if (RN.y > areaH - 40) { rainHurt(); RN.y = -46; }
+  rnRaf = requestAnimationFrame(rainLoop);
+}
+function endRain() {
+  RN.over = true;
+  cancelAnimationFrame(rnRaf);
+  if (RN.score > S.rainBest) { S.rainBest = RN.score; save(); }
+  const xp = Math.max(2, RN.score * 3);
+  addXp(xp);
+  showResult(RN.score >= 15 ? "🌧️ Yağmur Ustası!" : "💪 İyi Yakaladın!",
+    `${RN.score} kelime yakaladın — +${xp} XP` + (RN.score === S.rainBest ? " · 🏆 REKOR!" : ""),
+    () => go("home", false));
+}
+const _origGo7 = go;
+go = function(p, push) {
+  _origGo7(p, push);
+  if (p === "rain") startRain();
+  else if (RN && !RN.over) { RN.over = true; cancelAnimationFrame(rnRaf); }
+};
+Object.assign(TITLES, { rain:"🌧️ Kelime Yağmuru" });
 document.querySelectorAll(".mod[data-go]").forEach(m => { m.onclick = () => go(m.dataset.go); });
 
 
