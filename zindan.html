@@ -84,7 +84,7 @@
 
 <div class="panel" id="invPanel">
   <div class="box">
-    <h3>🎒 Çanta</h3>
+    <h3>🎒 Çanta</h3>\n    <div style="font-size:.72rem;color:#aaa;margin-bottom:8px">Sarı buton = eşyayı sat 💰</div>
     <div class="equip" id="equipInfo"></div>
     <div id="invList"></div>
     <button class="closeX" onclick="closeInv()">Kapat</button>
@@ -458,6 +458,12 @@ function openInv() {
     const b = document.createElement('button'); b.textContent = btnTxt;
     b.onclick = () => useItemAt(g.firstIdx);
     d.appendChild(b);
+    const sb = document.createElement('button');
+    sb.textContent = '💰' + sellValue(it);
+    sb.title = 'Sat';
+    sb.style.cssText = 'background:linear-gradient(135deg,#ffd93d,#ff9a3d);color:#5b3a00;margin-left:4px';
+    sb.onclick = () => sellItemAt(g.firstIdx);
+    d.appendChild(sb);
     list.appendChild(d);
   });
   document.getElementById('invPanel').classList.add('show');
@@ -465,6 +471,22 @@ function openInv() {
 function closeInv() { paused = false; document.getElementById('invPanel').classList.remove('show'); }
 window.closeInv = closeInv;
 
+function sellValue(it) {
+  if (it.type === 'potion') return Math.max(3, Math.ceil((it.heal||10) / 2));
+  if (it.type === 'bomb') return 15;
+  if (it.type === 'weapon') return 8 + it.atk * 3;
+  if (it.type === 'armor') return 8 + it.def * 4;
+  return 2;
+}
+function sellItemAt(i) {
+  const it = P.inv[i];
+  if (!it) return;
+  const v = sellValue(it);
+  P.inv.splice(i, 1);
+  P.gold += v;
+  log(`💰 ${it.em} ${it.name} satıldı: +${v} altın!`, 'item');
+  updateHud(); openInv();
+}
 function useItemAt(i) {
   const it = P.inv[i];
   if (!it) return;
