@@ -58,6 +58,15 @@
   .screen p { font-size:1rem; margin:4px 0; max-width:420px; }
   .screen button { margin-top:14px; border:none; border-radius:14px; padding:13px 28px; font-weight:bold; font-size:1.05rem;
     cursor:pointer; background:linear-gradient(135deg,#ffd93d,#ff9a3d); color:#5b3a00; }
+  .abilities { display:flex; flex-direction:column; gap:8px; }
+  .abil { position:relative; width:64px; height:64px; border:none; border-radius:16px; font-size:1.7rem; cursor:pointer;
+    background:radial-gradient(circle at 38% 30%, #5a4a8c, #2e2450); color:#fff; box-shadow:0 4px 10px rgba(0,0,0,.45);
+    overflow:hidden; }
+  .abil:active { transform:scale(.93); }
+  .abil.cool { filter:grayscale(.7) brightness(.6); }
+  .abil .acd { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:1rem; font-weight:bold; color:#ffd54f; }
+  .abil .ai { position:relative; z-index:1; }
 </style>
 </head>
 <body>
@@ -75,6 +84,10 @@
 <div id="log"></div>
 <div class="controls">
   <div id="joy"><div id="joyKnob"></div></div>
+  <div class="abilities">
+    <button id="dashBtn" class="abil"><span class="ai">🌀</span><span class="acd" id="dashCd"></span></button>
+    <button id="whirlBtn" class="abil"><span class="ai">⚡</span><span class="acd" id="whirlCd"></span></button>
+  </div>
   <div class="acts">
     <button class="gold" id="invBtn">🎒 Çanta</button>
     <button class="shopB" id="shopBtn">🛒 Dükkân</button>
@@ -103,7 +116,7 @@
 <div class="screen show" id="introScreen">
   <h2>🗡️ Zindan</h2>
   <p>8 katlı zindanın dibindeki Ejderhayı yen! Her kat rastgele üretilir.</p>
-  <p style="opacity:.7;font-size:.85rem">🕹️ Joystick ile her yöne akıcı yürü · düşmana yaklaş = otomatik savaş!<br>💰 Altın topla, 🛒 dükkândan güçlen, seviye atla!</p>
+  <p style="opacity:.7;font-size:.85rem">🕹️ Joystick ile akıcı yürü · düşmana yaklaş = otomatik savaş<br>🌀 Atılma: hızlı kaç + dokunulmazlık · ⚡ Savurma: etrafı biç<br>💰 12 kat, dükkân, yetenekler — Ejderhaya kadar dayan!</p>
   <button onclick="newRun()">⚔️ Maceraya Başla</button>
 </div>
 <div class="screen" id="deadScreen">
@@ -186,21 +199,34 @@ const ENEMY_TYPES = [
   { em:'🧟', name:'Zombi',   hp:26, atk:8,  xp:20, minF:3, spd:1.4 },
   { em:'👻', name:'Hayalet', hp:22, atk:11, xp:26, minF:4, spd:2.3 },
   { em:'🧌', name:'Trol',    hp:42, atk:13, xp:38, minF:5, spd:1.5 },
-  { em:'😈', name:'İblis',   hp:55, atk:17, xp:55, minF:6, spd:2.0 }
+  { em:'😈', name:'İblis',   hp:55, atk:17, xp:55, minF:6, spd:2.0 },
+  { em:'👹', name:'Oni',     hp:70, atk:20, xp:70, minF:7, spd:1.7 },
+  { em:'🦂', name:'Akrep',   hp:48, atk:24, xp:62, minF:8, spd:2.5 },
+  { em:'🧛', name:'Vampir',  hp:80, atk:22, xp:85, minF:9, spd:2.2 },
+  { em:'👺', name:'Gulyabani', hp:95, atk:26, xp:100, minF:10, spd:1.9 },
+  { em:'☠️', name:'Lich',    hp:120, atk:30, xp:130, minF:11, spd:1.6 }
 ];
 const WEAPONS = [
   { em:'🗡️', name:'Hançer', atk:2 }, { em:'⚔️', name:'Kılıç', atk:5 },
-  { em:'🪓', name:'Balta', atk:8 }, { em:'🔱', name:'Mızrak', atk:12 }, { em:'⚡', name:'Yıldırım Kılıcı', atk:17 }
+  { em:'🪓', name:'Balta', atk:8 }, { em:'🔨', name:'Savaş Çekici', atk:11 },
+  { em:'🔱', name:'Mızrak', atk:14 }, { em:'⚡', name:'Yıldırım Kılıcı', atk:18 },
+  { em:'🗡', name:'Ejderha Kılıcı', atk:24 }
 ];
 const ARMORS = [
   { em:'🧥', name:'Deri Zırh', def:1 }, { em:'🦺', name:'Zincir Zırh', def:3 },
-  { em:'🛡️', name:'Plaka Zırh', def:5 }, { em:'💠', name:'Kristal Zırh', def:8 }
+  { em:'🛡️', name:'Plaka Zırh', def:5 }, { em:'💠', name:'Kristal Zırh', def:8 },
+  { em:'🐉', name:'Ejderha Zırhı', def:12 }
 ];
+const MAXFLOOR = 12;
 const SHOP = [
   { id:'potion', em:'🧪', nm:'Büyük İksir', desc:'+25 can (çantana girer)',
     price:() => 15, buy:() => { P.inv.push({type:'potion', em:'🧪', name:'Büyük İksir', heal:25}); } },
   { id:'bomb', em:'💣', nm:'Patlama Parşömeni', desc:'Görünen tüm düşmanlara 30 hasar (çantana girer)',
     price:() => 30, buy:() => { P.inv.push({type:'bomb', em:'💣', name:'Patlama Parşömeni', dmg:30}); } },
+  { id:'scroll', em:'📜', nm:'Şifa Parşömeni', desc:'Canı tamamen yeniler (çantana girer)',
+    price:() => 35, buy:() => { P.inv.push({type:'scroll', em:'📜', name:'Şifa Parşömeni', full:true}); } },
+  { id:'hizpot', em:'🍷', nm:'Hız İksiri', desc:'8 sn süper hız (çantana girer)',
+    price:() => 25, buy:() => { P.inv.push({type:'hizpot', em:'🍷', name:'Hız İksiri', boost:1}); } },
   { id:'map', em:'🗺️', nm:'Kat Haritası', desc:'Bu katın tamamını gösterir (hemen kullanılır)',
     price:() => 20, buy:() => { for (let y=0;y<level.H;y++) for (let x=0;x<level.W;x++) if (level.map[y][x]==='.') seen[y][x]=true; log('🗺️ Kat haritası açıldı!','item'); } },
   { id:'guc', em:'💪', nm:'Güç Tılsımı', desc:'+1 saldırı (KALICI)',
@@ -217,7 +243,7 @@ const keys = { up:false, down:false, left:false, right:false };
 
 function newRun() {
   P = { x:0, y:0, hp:30, maxHp:30, baseAtk:5, baseDef:1, lvl:1, xp:0, xpNext:20, gold:0,
-    weapon:null, armor:null, bought:{}, atkCool:0,
+    weapon:null, armor:null, bought:{}, atkCool:0, face:1, dashCD:0, dashT:0, invuln:0, whirlCD:0, speedT:0, lastVX:1, lastVY:0,
     inv:[{type:'potion', em:'🧪', name:'Küçük İksir', heal:15}] };
   floor = 1;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('show'));
@@ -248,9 +274,9 @@ function buildFloor() {
     enemies.push({ ...t, x:ex+0.5, y:ey+0.5, hp: Math.round(t.hp*sc), maxHp: Math.round(t.hp*sc),
       atk: Math.round(t.atk*sc), xp: Math.round(t.xp*sc), awake:false, atkCool:0 });
   }
-  if (floor === 8) {
+  if (floor === MAXFLOOR) {
     enemies.push({ em:'🐲', name:'EJDERHA', x: last.cx+0.5, y: Math.max(last.y, last.cy-1)+0.5,
-      hp:170, maxHp:170, atk:22, xp:0, awake:false, boss:true, spd:1.6, atkCool:0 });
+      hp:260, maxHp:260, atk:30, xp:0, awake:false, boss:true, spd:1.7, atkCool:0 });
   }
   items = [];
   const drop = (type, payload) => {
@@ -265,6 +291,9 @@ function buildFloor() {
   };
   for (let i = 0; i < 2 + Math.floor(Math.random()*2); i++)
     drop('potion', { em:'🧪', name:'İksir', heal: 12 + floor*3 });
+  if (Math.random() < 0.3) drop('scroll', { em:'📜', name:'Şifa Parşömeni', full:true });
+  if (Math.random() < 0.35) drop('bomb', { em:'💣', name:'Patlama Parşömeni', dmg: 28 + floor*2 });
+  if (Math.random() < 0.3) drop('hizpot', { em:'🍷', name:'Hız İksiri', boost:1 });
   for (let i = 0; i < 3; i++)
     drop('gold', { em:'💰', name:'Altın', amt: 8 + Math.floor(Math.random()*8) + floor*2 });
   if (Math.random() < 0.7) {
@@ -279,7 +308,7 @@ function buildFloor() {
   lastFovTile = null;
   computeFov();
   updateHud();
-  log(`🏰 Kat ${floor}` + (floor === 8 ? ' — EJDERHANIN İNİ! 🐲' : ''), floor === 8 ? 'bad' : 'item');
+  log(`🏰 Kat ${floor}` + (floor === MAXFLOOR ? ' — EJDERHANIN İNİ! 🐲' : ''), floor === MAXFLOOR ? 'bad' : 'item');
 }
 
 let lastFovTile = null;
@@ -327,8 +356,28 @@ function update(dt) {
     const m = Math.hypot(vx, vy);
     if (m > 1) { vx /= m; vy /= m; }
   }
+  P.dashCD = Math.max(0, P.dashCD - dt);
+  P.whirlCD = Math.max(0, P.whirlCD - dt);
+  P.invuln = Math.max(0, P.invuln - dt);
+  P.dashT = Math.max(0, P.dashT - dt);
+  P.speedT = Math.max(0, P.speedT - dt);
   if (vx || vy) {
-    const sp = 4.4;
+    if (Math.abs(vx) > 0.05) P.face = vx < 0 ? -1 : 1;
+    P.lastVX = vx; P.lastVY = vy;
+  }
+  // dash sırasında son yöne hızlı süzül
+  if (P.dashT > 0) {
+    const dl = Math.hypot(P.lastVX, P.lastVY) || 1;
+    moveEntity(P, (P.lastVX/dl) * 13 * dt, (P.lastVY/dl) * 13 * dt, 0.30);
+    // dash içinden geçtiğin düşmanlara vuruş
+    enemies.forEach(e => { if (!e._dashed && Math.hypot(e.x-P.x, e.y-P.y) < 0.7) {
+      e._dashed = true; const dmg = Math.max(1, Math.round(totalAtk()*1.5));
+      e.hp -= dmg; e.hitT = 0.15; spawnHit(e.x, e.y, '#9be7ff', 12);
+      log(`🌀 Atılma darbesi: ${dmg} hasar!`, 'good');
+      if (e.hp <= 0) killFoe(e);
+    }});
+  } else if (vx || vy) {
+    const sp = (P.speedT > 0 ? 6.6 : 4.4);
     moveEntity(P, vx * sp * dt, vy * sp * dt, 0.30);
   }
   // FOV sadece kare değişince
@@ -341,7 +390,7 @@ function update(dt) {
   }
   // merdiven butonu
   const nearStairs = Math.hypot(stairs.x - P.x, stairs.y - P.y) < 0.75;
-  document.getElementById('descendBtn').style.display = (nearStairs && floor < 8) ? 'block' : 'none';
+  document.getElementById('descendBtn').style.display = (nearStairs && floor < MAXFLOOR) ? 'block' : 'none';
   // oyuncu otomatik saldırı
   P.atkCool -= dt;
   if (P.atkCool <= 0) {
@@ -351,7 +400,7 @@ function update(dt) {
       P.atkCool = 0.45;
       const dmg = Math.max(1, totalAtk() + Math.floor(Math.random()*4) - 1);
       target.hp -= dmg;
-      target.hitT = 0.15;
+      target.hitT = 0.15; spawnHit(target.x, target.y, '#ffe08a', 9);
       log(`⚔️ ${target.name}'a ${dmg} hasar!`, 'good');
       if (target.hp <= 0) killFoe(target);
     }
@@ -373,8 +422,9 @@ function update(dt) {
       moveEntity(e, (ux + sx*0.5) * e.spd * dt, (uy + sy*0.5) * e.spd * dt, 0.30);
     } else if (e.atkCool <= 0) {
       e.atkCool = 0.95;
+      if (P.invuln > 0) { continue; }
       const dmg = Math.max(1, e.atk - totalDef() + Math.floor(Math.random()*3) - 1);
-      P.hp -= dmg;
+      P.hp -= dmg; spawnHit(P.x, P.y, '#ff6b6b', 7);
       log(`${e.em} ${e.name} sana ${dmg} hasar verdi!`, 'bad');
       updateHud();
       if (P.hp <= 0) { die(e); return; }
@@ -409,10 +459,37 @@ function pickUp(it) {
   else { P.inv.push(it); log(`${it.em} ${it.name} alındı (çantada)`, 'item'); }
   updateHud();
 }
+function doDash() {
+  if (!gameOn || paused || P.dashCD > 0) return;
+  P.dashT = 0.16; P.invuln = 0.32; P.dashCD = 2.2;
+  enemies.forEach(e => e._dashed = false);
+  spawnHit(P.x, P.y, '#9be7ff', 10);
+}
+function doWhirl() {
+  if (!gameOn || paused || P.whirlCD > 0) return;
+  P.whirlCD = 4.5;
+  let hit = 0;
+  const dmg = Math.max(1, Math.round(totalAtk()*1.2));
+  [...enemies].forEach(e => {
+    if (Math.hypot(e.x-P.x, e.y-P.y) < 1.7) {
+      e.hp -= dmg; e.hitT = 0.15; spawnHit(e.x, e.y, '#ffd54f', 8); hit++;
+      if (e.hp <= 0) killFoe(e);
+    }
+  });
+  log(hit ? `⚡ Savurma! ${hit} düşmana ${dmg} hasar!` : '⚡ Savurma — yakında düşman yok!', hit ? 'good' : 'item');
+}
+function updateAbilityHud() {
+  const db = document.getElementById('dashBtn'), wb = document.getElementById('whirlBtn');
+  if (!P) return;
+  db.classList.toggle('cool', P.dashCD > 0);
+  document.getElementById('dashCd').textContent = P.dashCD > 0 ? Math.ceil(P.dashCD) : '';
+  wb.classList.toggle('cool', P.whirlCD > 0);
+  document.getElementById('whirlCd').textContent = P.whirlCD > 0 ? Math.ceil(P.whirlCD) : '';
+}
 function descend() {
   if (Math.hypot(stairs.x - P.x, stairs.y - P.y) < 0.9) {
     floor++;
-    if (floor > 8) return;
+    if (floor > MAXFLOOR) return;
     buildFloor();
   }
 }
@@ -451,6 +528,8 @@ function openInv() {
     let desc = '', btnTxt = '';
     if (it.type === 'potion') { desc = `+${it.heal} can`; btnTxt = 'İç'; }
     else if (it.type === 'bomb') { desc = `Görünen düşmanlara ${it.dmg} hasar`; btnTxt = 'Kullan'; }
+    else if (it.type === 'scroll') { desc = 'Canı tamamen yeniler'; btnTxt = 'Oku'; }
+    else if (it.type === 'hizpot') { desc = '8 sn süper hız'; btnTxt = 'İç'; }
     else if (it.type === 'weapon') { desc = `Saldırı +${it.atk}`; btnTxt = 'Kuşan'; }
     else if (it.type === 'armor') { desc = `Savunma +${it.def}`; btnTxt = 'Giy'; }
     d.innerHTML = `<span class="ic">${it.em}${g.count > 1 ? `<span class="cnt">×${g.count}</span>` : ''}</span>
@@ -474,6 +553,8 @@ window.closeInv = closeInv;
 function sellValue(it) {
   if (it.type === 'potion') return Math.max(3, Math.ceil((it.heal||10) / 2));
   if (it.type === 'bomb') return 15;
+  if (it.type === 'scroll') return 18;
+  if (it.type === 'hizpot') return 10;
   if (it.type === 'weapon') return 8 + it.atk * 3;
   if (it.type === 'armor') return 8 + it.def * 4;
   return 2;
@@ -493,6 +574,14 @@ function useItemAt(i) {
   if (it.type === 'potion') {
     P.hp = Math.min(P.maxHp, P.hp + it.heal);
     log(`🧪 İksir içtin: +${it.heal} can`, 'good');
+    P.inv.splice(i, 1);
+  } else if (it.type === 'scroll') {
+    P.hp = P.maxHp;
+    log('📜 Şifa Parşömeni: CAN TAM DOLU!', 'good');
+    P.inv.splice(i, 1);
+  } else if (it.type === 'hizpot') {
+    P.speedT = 8;
+    log('🍷 Hız İksiri: 8 saniye süper hız! 💨', 'good');
     P.inv.splice(i, 1);
   } else if (it.type === 'bomb') {
     let hit = 0;
@@ -561,89 +650,214 @@ function log(msg, cls) {
   if (el.children.length > 60) el.removeChild(el.firstChild);
 }
 
-/* ---------- cizim (kayan kamera) ---------- */
+/* ---------- cizim (kayan kamera) — GELISMIS GRAFIK v4 ---------- */
+let fx = [];
+function spawnHit(wx, wy, color, n) {
+  for (let i = 0; i < (n||8); i++) {
+    const a = Math.random()*Math.PI*2, sp = 1.6 + Math.random()*3;
+    fx.push({ x:wx, y:wy, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp - 1, life:1, color:color||'#fff', r:1.5+Math.random()*2 });
+  }
+}
+function isTorch(tx, ty) {
+  if (level.map[ty][tx] !== '#') return false;
+  // alt komsusu zemin olan duvarda mesale (deterministik)
+  if (ty+1 >= level.H || level.map[ty+1][tx] !== '.') return false;
+  return ((tx*92837 ^ ty*689287) >>> 0) % 5 === 0;
+}
 function render() {
   if (!level) return;
+  const TM = (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000;
   ctx.clearRect(0, 0, cv.width, cv.height);
+  // koyu zemin dolgusu
+  ctx.fillStyle = '#070611';
+  ctx.fillRect(0, 0, cv.width, cv.height);
   const ox = P.x - VIEW_W/2, oy = P.y - VIEW_H/2;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const x0 = Math.floor(ox), y0 = Math.floor(oy);
+
+  // meşale ışıkları (görünür alanda) — sıcak titreşim
+  const torches = [];
+  for (let ty = y0; ty <= y0 + VIEW_H + 1; ty++) for (let tx = x0; tx <= x0 + VIEW_W + 1; tx++) {
+    if (tx<0||ty<0||tx>=level.W||ty>=level.H) continue;
+    if (seen[ty][tx] && visible[ty] && visible[ty][tx] && isTorch(tx, ty)) torches.push([tx, ty]);
+  }
+  function torchLight(wx, wy) {
+    let add = 0;
+    for (const [tx, ty] of torches) {
+      const d = Math.hypot(tx + 0.5 - wx, ty + 1.2 - wy);
+      if (d < 4) add += (1 - d/4) * (0.55 + 0.12*Math.sin(TM*8 + tx*3 + ty));
+    }
+    return Math.min(0.7, add);
+  }
+
+  // --- ZEMIN + DUVAR ---
   for (let ty = y0; ty <= y0 + VIEW_H + 1; ty++) for (let tx = x0; tx <= x0 + VIEW_W + 1; tx++) {
     if (tx<0||ty<0||tx>=level.W||ty>=level.H) continue;
     if (!seen[ty][tx]) continue;
-    const lit = visible[ty][tx];
+    const lit = visible[ty] && visible[ty][tx];
     const px = (tx - ox) * TILE, py = (ty - oy) * TILE;
     const dist = Math.max(Math.abs(tx + 0.5 - P.x), Math.abs(ty + 0.5 - P.y));
-    const bright = lit ? Math.max(0.45, 1 - dist*0.09) : 0.22;
+    let bright = lit ? Math.max(0.4, 1 - dist*0.085) : 0.2;
+    if (lit) bright = Math.min(1.25, bright + torchLight(tx + 0.5, ty + 0.5));
+    const warm = lit ? Math.min(0.5, torchLight(tx + 0.5, ty + 0.5)) : 0;
+
     if (level.map[ty][tx] === '#') {
-      const topH = TILE * 0.62;
-      ctx.fillStyle = shade('#5a4d80', bright);
+      const frontVisible = ty+1 < level.H && level.map[ty+1][tx] === '.';
+      const topH = frontVisible ? TILE * 0.58 : TILE;
+      // üst yüz (taş)
+      ctx.fillStyle = warm2('#564a7a', bright, warm);
       ctx.fillRect(px, py, TILE+1, topH);
-      ctx.fillStyle = shade('#352b52', bright);
-      ctx.fillRect(px, py + topH, TILE+1, TILE - topH + 1);
-      ctx.fillStyle = shade('#6b5e94', bright * 0.9);
-      ctx.fillRect(px + 2, py + 2, TILE - 4, 3);
-      ctx.fillStyle = 'rgba(0,0,0,.25)';
-      ctx.fillRect(px, py + topH - 2, TILE+1, 2);
+      // tuğla deseni
+      ctx.fillStyle = warm2('#665a90', bright*1.04, warm);
+      const brickH = topH/2;
+      for (let by = 0; by < 2; by++) {
+        const offX = (ty + by) % 2 ? TILE*0.5 : 0;
+        ctx.fillRect(px + offX + 1, py + by*brickH + 1, TILE*0.5 - 2, brickH - 2);
+        ctx.fillRect(px + (offX ? 1 : TILE*0.5+1), py + by*brickH + 1, TILE*0.5 - 2, brickH - 2);
+      }
+      // üst parlak kenar
+      ctx.fillStyle = warm2('#8579b4', bright*1.1, warm);
+      ctx.fillRect(px, py, TILE+1, 2);
+      if (frontVisible) {
+        // ön yüz (gölgede)
+        ctx.fillStyle = warm2('#2e2748', bright*0.8, warm*0.6);
+        ctx.fillRect(px, py + topH, TILE+1, TILE - topH + 1);
+        // ön yüz harç çizgisi
+        ctx.fillStyle = 'rgba(0,0,0,.35)';
+        ctx.fillRect(px, py + topH, TILE+1, 2);
+      }
     } else {
-      const base = (tx + ty) % 2 === 0 ? '#241e35' : '#211b30';
-      ctx.fillStyle = shade(base, bright + 0.15);
+      // ZEMIN: taş plaka
+      const base = (tx + ty) % 2 === 0 ? '#221c33' : '#1e192d';
+      ctx.fillStyle = warm2(base, bright + 0.12, warm);
       ctx.fillRect(px, py, TILE+1, TILE+1);
+      // plaka kenar gölgesi
+      ctx.strokeStyle = 'rgba(0,0,0,.28)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px + 0.5, py + 0.5, TILE, TILE);
+      // çatlak/çakıl/yosun
       const h = (tx*73856093 ^ ty*19349663) >>> 0;
-      if (h % 7 === 0) {
-        ctx.fillStyle = shade('#3a3252', bright);
-        ctx.fillRect(px + (h % 5) * 3 + 4, py + ((h>>3) % 5) * 3 + 4, 3, 2);
+      if (h % 9 === 0) {
+        ctx.fillStyle = warm2('#332b4a', bright);
+        ctx.fillRect(px + (h % 6) * 3 + 3, py + ((h>>3) % 6) * 3 + 3, 4, 2);
+      } else if (h % 13 === 0) {
+        ctx.fillStyle = warm2('#2a3a28', bright); // yosun
+        ctx.beginPath(); ctx.arc(px + (h%5)*4+5, py + ((h>>4)%5)*4+5, 2.5, 0, 7); ctx.fill();
       }
     }
   }
-  const drawAt = (wx, wy, em, size, withShadow) => {
-    const sx = (wx - ox) * TILE, sy = (wy - oy) * TILE;
+
+  // --- MEŞALELER (alev + hale) ---
+  for (const [tx, ty] of torches) {
+    const sx = (tx + 0.5 - ox) * TILE, sy = (ty + 0.35 - oy) * TILE;
+    const fl = 0.85 + 0.15*Math.sin(TM*11 + tx);
+    const g = ctx.createRadialGradient(sx, sy, 2, sx, sy, TILE*2.6*fl);
+    g.addColorStop(0, 'rgba(255,180,70,.32)'); g.addColorStop(.5, 'rgba(255,120,40,.12)'); g.addColorStop(1, 'rgba(255,100,30,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(sx - TILE*2.6, sy - TILE*2.6, TILE*5.2, TILE*5.2);
+    ctx.font = (TILE*0.5) + 'px serif';
+    ctx.fillText('🔥', sx, sy);
+  }
+
+  const drawAt = (wx, wy, em, size, withShadow, bob) => {
+    const sx = (wx - ox) * TILE, sy = (wy - oy) * TILE + (bob||0);
     if (sx < -TILE || sy < -TILE || sx > cv.width + TILE || sy > cv.height + TILE) return;
     if (withShadow) {
-      ctx.fillStyle = 'rgba(0,0,0,.4)';
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
       ctx.beginPath();
-      ctx.ellipse(sx, sy + TILE*0.32, TILE*0.3, TILE*0.12, 0, 0, 7);
+      ctx.ellipse((wx - ox) * TILE, (wy - oy) * TILE + TILE*0.34, TILE*0.3, TILE*0.12, 0, 0, 7);
       ctx.fill();
     }
     ctx.font = (size||TILE*0.74) + 'px serif';
     ctx.fillText(em, sx, sy);
   };
-  // merdiven parlama
+
+  // merdiven: dönen ışık portali
   if (seen[Math.floor(stairs.y)][Math.floor(stairs.x)]) {
     const sx = (stairs.x - ox) * TILE, sy = (stairs.y - oy) * TILE;
-    const g = ctx.createRadialGradient(sx, sy, 2, sx, sy, TILE*0.8);
-    g.addColorStop(0, 'rgba(255,217,61,.45)'); g.addColorStop(1, 'rgba(255,217,61,0)');
+    const pulse = 0.7 + 0.3*Math.sin(TM*3);
+    const g = ctx.createRadialGradient(sx, sy, 2, sx, sy, TILE*0.95*pulse);
+    g.addColorStop(0, 'rgba(120,230,255,.5)'); g.addColorStop(1, 'rgba(120,230,255,0)');
     ctx.fillStyle = g;
     ctx.fillRect(sx - TILE, sy - TILE, TILE*2, TILE*2);
     drawAt(stairs.x, stairs.y, '🪜');
   }
-  items.forEach(i => { if (visible[Math.floor(i.y)] && visible[Math.floor(i.y)][Math.floor(i.x)]) drawAt(i.x, i.y, i.em, TILE*0.62, true); });
+
+  // eşyalar: süzülme + parıltı
+  items.forEach(i => {
+    const iy = Math.floor(i.y), ix = Math.floor(i.x);
+    if (!visible[iy] || !visible[iy][ix]) return;
+    const sx = (i.x - ox) * TILE, sy = (i.y - oy) * TILE;
+    const gl = 0.5 + 0.5*Math.sin(TM*4 + i.x*2 + i.y);
+    const col = i.type === 'gold' ? '255,215,80' : i.type === 'potion' ? '120,230,160' : i.type === 'weapon' ? '255,160,160' : '160,200,255';
+    const g = ctx.createRadialGradient(sx, sy, 1, sx, sy, TILE*0.6);
+    g.addColorStop(0, `rgba(${col},${0.25 + gl*0.2})`); g.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(sx - TILE*0.6, sy - TILE*0.6, TILE*1.2, TILE*1.2);
+    drawAt(i.x, i.y, i.em, TILE*0.6, true, Math.sin(TM*3 + i.x) * 2.5);
+  });
+
+  // düşmanlar
   enemies.forEach(e => {
     const ex = Math.floor(e.x), ey = Math.floor(e.y);
     if (!visible[ey] || !visible[ey][ex]) return;
     e.hitT = Math.max(0, (e.hitT||0) - 0.016);
-    drawAt(e.x, e.y, e.em, (e.boss ? TILE*0.98 : TILE*0.74) * (e.hitT > 0 ? 1.18 : 1), true);
+    const bob = Math.sin(TM*5 + e.x*3) * (e.boss ? 1.5 : 2.5);
+    if (e.hitT > 0) { ctx.save(); ctx.globalAlpha = 0.6; drawAt(e.x, e.y, e.em, (e.boss?TILE:TILE*0.78)*1.25, false, bob); ctx.restore(); }
+    drawAt(e.x, e.y, e.em, (e.boss ? TILE*0.98 : TILE*0.74) * (e.hitT > 0 ? 1.12 : 1), true, bob);
+    // can barı (çerçeveli)
     const sx = (e.x - ox) * TILE, sy = (e.y - oy) * TILE;
-    const w = TILE - 8, ratio = Math.max(0, e.hp/e.maxHp);
-    ctx.fillStyle = 'rgba(0,0,0,.7)';
-    rr(sx - w/2, sy - TILE*0.52, w, 4, 2);
-    ctx.fillStyle = ratio > .5 ? '#66bb6a' : ratio > .25 ? '#ffc107' : '#ef5350';
-    rr(sx - w/2, sy - TILE*0.52, Math.max(2, w*ratio), 4, 2);
+    const w = e.boss ? TILE*1.4 : TILE - 6, ratio = Math.max(0, e.hp/e.maxHp);
+    const by = sy - (e.boss ? TILE*0.72 : TILE*0.55);
+    ctx.fillStyle = 'rgba(0,0,0,.8)';
+    rr(sx - w/2 - 1, by - 1, w + 2, 6, 3);
+    ctx.fillStyle = ratio > .5 ? '#5ec46a' : ratio > .25 ? '#ffc107' : '#ef5350';
+    rr(sx - w/2, by, Math.max(2, w*ratio), 4, 2);
   });
-  // oyuncu halka + karakter
+
+  // OYUNCU: ışık halkası + yön + bob
   {
     const sx = (P.x - ox) * TILE, sy = (P.y - oy) * TILE;
-    const g = ctx.createRadialGradient(sx, sy, 2, sx, sy, TILE*0.95);
-    g.addColorStop(0, 'rgba(140,200,255,.18)'); g.addColorStop(1, 'rgba(140,200,255,0)');
+    const g = ctx.createRadialGradient(sx, sy, 2, sx, sy, TILE*1.6);
+    g.addColorStop(0, 'rgba(150,205,255,.22)'); g.addColorStop(.6, 'rgba(120,180,255,.08)'); g.addColorStop(1, 'rgba(120,180,255,0)');
     ctx.fillStyle = g;
-    ctx.fillRect(sx - TILE, sy - TILE, TILE*2, TILE*2);
+    ctx.fillRect(sx - TILE*1.6, sy - TILE*1.6, TILE*3.2, TILE*3.2);
+    const moving = (joyVX||joyVY||keys.left||keys.right||keys.up||keys.down);
+    const bob = moving ? Math.sin(TM*12) * 2 : Math.sin(TM*2.5) * 1;
+    ctx.save();
+    ctx.translate(sx, sy + bob);
+    if (P.face < 0) ctx.scale(-1, 1);
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    ctx.beginPath(); ctx.ellipse(0, TILE*0.34, TILE*0.3, TILE*0.12, 0, 0, 7); ctx.fill();
+    ctx.font = (TILE*0.8) + 'px serif';
+    ctx.fillText('🧝', 0, 0);
+    ctx.restore();
   }
-  drawAt(P.x, P.y, '🧝', TILE*0.78, true);
-  // vinyet
-  const vg = ctx.createRadialGradient(cv.width/2, cv.height/2, cv.height*0.35, cv.width/2, cv.height/2, cv.height*0.85);
-  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)');
+
+  // PARÇACIKLAR (kıvılcım)
+  for (let i = fx.length - 1; i >= 0; i--) {
+    const p = fx[i];
+    p.life -= 0.05; p.x += p.vx*0.018; p.y += p.vy*0.018; p.vy += 0.12;
+    if (p.life <= 0) { fx.splice(i, 1); continue; }
+    const sx = (p.x - ox) * TILE, sy = (p.y - oy) * TILE;
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(sx, sy, p.r * p.life, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // ATMOSFER: vinyet + hafif sis
+  const vg = ctx.createRadialGradient(cv.width/2, cv.height/2, cv.height*0.32, cv.width/2, cv.height/2, cv.height*0.82);
+  vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.62)');
   ctx.fillStyle = vg;
   ctx.fillRect(0, 0, cv.width, cv.height);
+}
+// renk + sicak isik karistir
+function warm2(hex, f, warm) {
+  const n = parseInt(hex.slice(1), 16);
+  let r = ((n>>16)&255) * f, g = ((n>>8)&255) * f, b = (n&255) * f;
+  if (warm) { r += 120*warm; g += 70*warm; b += 20*warm; }
+  return 'rgb(' + Math.min(255,r|0) + ',' + Math.min(255,g|0) + ',' + Math.min(255,b|0) + ')';
 }
 function shade(hex, f) {
   const n = parseInt(hex.slice(1), 16);
@@ -667,6 +881,7 @@ function loop(ts) {
   let dt = Math.min(0.05, (ts - lastT) / 1000);
   lastT = ts;
   update(dt);
+  if (gameOn) updateAbilityHud();
   render();
   requestAnimationFrame(loop);
 }
@@ -707,6 +922,8 @@ document.addEventListener('mouseup', () => { if (joyMouse) { joyMouse = false; j
 document.getElementById('invBtn').onclick = openInv;
 document.getElementById('shopBtn').onclick = openShop;
 document.getElementById('descendBtn').onclick = descend;
+document.getElementById('dashBtn').onclick = doDash;
+document.getElementById('whirlBtn').onclick = doWhirl;
 
 document.addEventListener('keydown', e => {
   if (e.key === 'ArrowUp') keys.up = true;
@@ -716,6 +933,8 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'i') openInv();
   else if (e.key === 's') openShop();
   else if (e.key === 'Enter') descend();
+  else if (e.key === 'Shift') doDash();
+  else if (e.key === 'e') doWhirl();
 });
 document.addEventListener('keyup', e => {
   if (e.key === 'ArrowUp') keys.up = false;
